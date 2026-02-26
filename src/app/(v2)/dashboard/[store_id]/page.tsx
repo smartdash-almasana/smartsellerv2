@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import SyncButton from "./SyncButton";
 
 export default async function StoreDashboardPage({
   params,
@@ -26,7 +27,7 @@ export default async function StoreDashboardPage({
   const { store_id } = await params;
   const me = await meRes.json();
   const stores = Array.isArray(me?.stores) ? me.stores : [];
-  const allowed = stores.some((s: any) => s?.store_id === store_id);
+  const allowed = stores.some((s: { store_id: string }) => s?.store_id === store_id);
 
   if (!allowed) {
     redirect("/choose-store");
@@ -36,10 +37,43 @@ export default async function StoreDashboardPage({
     notFound();
   }
 
+  // Fetch current score (server-side, best-effort)
+  let initialScore: { score: number; computed_at: string } | null = null;
+  try {
+    const scoreRes = await fetch(`${baseUrl}/api/score/${store_id}`, {
+      cache: "no-store",
+      headers: { cookie: hdrs.get("cookie") ?? "" },
+    });
+    if (scoreRes.ok) {
+      initialScore = await scoreRes.json();
+    }
+  } catch {
+    // score is optional; fail silently
+  }
+
+  const storeInfo = stores.find((s: { store_id: string; display_name?: string }) => s.store_id === store_id);
+  const displayName = storeInfo?.display_name ?? store_id;
+
   return (
     <main className="mx-auto max-w-4xl p-6">
       <h1 className="text-2xl font-semibold">Dashboard</h1>
-      <p className="mt-2 text-sm text-slate-600">Store: {store_id}</p>
+      <p className="mt-2 text-sm text-slate-600">{displayName}</p>
+
+      {initialScore !== null && (
+        <div style={{ marginTop: 16, padding: 12, background: '#f8fafc', borderRadius: 8, fontSize: 14 }}>
+          <strong>Score V0:</strong> {initialScore.score} / 100
+          <span style={{ marginLeft: 12, color: '#64748b', fontSize: 12 }}>
+            (calculado {new Date(initialScore.computed_at).toLocaleString()})
+          </span>
+        </div>
+      )}
+      {initialScore === null && (
+        <div style={{ marginTop: 16, color: '#64748b', fontSize: 13 }}>
+          Sin score calculado aún. Sincronizá para generarlo.
+        </div>
+      )}
+
+      <SyncButton storeId={store_id} />
     </main>
   );
 }
