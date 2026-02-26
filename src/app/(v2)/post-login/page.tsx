@@ -1,5 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 interface StoreSlim {
   store_id: string;
@@ -36,5 +37,21 @@ export default async function PostLoginPage() {
   }
 
   const me = (await meRes.json()) as MeResponse;
-  redirect(me.redirect);
+  if (me.stores.length === 1) {
+    redirect(`/dashboard/${me.stores[0].store_id}`);
+  }
+
+  if (me.stores.length > 1) {
+    redirect("/choose-store");
+  }
+
+  return (
+    <main style={{ maxWidth: 640, margin: "64px auto", padding: "0 16px" }}>
+      <h1>Conecta tu tienda de Mercado Libre</h1>
+      <p>No encontramos tiendas vinculadas a tu cuenta.</p>
+      <p>
+        <Link href="/api/auth/meli/start">Conectar Mercado Libre</Link>
+      </p>
+    </main>
+  );
 }
