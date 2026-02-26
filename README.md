@@ -22,3 +22,7 @@ Provider → v2_webhook_events → v2_domain_events → v2_engine_runs → v2_he
 
 ## Schema
 5 tablas base + 3 tablas engine. Migraciones en supabase/migrations/.
+## Docs
+- ADR-0002: `docs/adr/0002-score-v0-contract.md`
+- V2 Score V0 Contract: `docs/V2_SCORE_V0_CONTRACT.md`
+
