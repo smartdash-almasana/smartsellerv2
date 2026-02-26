@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import SyncButton from "./SyncButton";
+import PolicyPanel from "./PolicyPanel";
 
 export default async function StoreDashboardPage({
   params,
@@ -51,29 +52,48 @@ export default async function StoreDashboardPage({
     // score is optional; fail silently
   }
 
-  const storeInfo = stores.find((s: { store_id: string; display_name?: string }) => s.store_id === store_id);
+  const storeInfo = stores.find(
+    (s: { store_id: string; display_name?: string }) => s.store_id === store_id
+  );
   const displayName = storeInfo?.display_name ?? store_id;
 
   return (
     <main className="mx-auto max-w-4xl p-6">
+      {/* Header */}
       <h1 className="text-2xl font-semibold">Dashboard</h1>
       <p className="mt-2 text-sm text-slate-600">{displayName}</p>
 
-      {initialScore !== null && (
-        <div style={{ marginTop: 16, padding: 12, background: '#f8fafc', borderRadius: 8, fontSize: 14 }}>
+      {/* Score */}
+      {initialScore !== null ? (
+        <div
+          style={{
+            marginTop: 16,
+            padding: 12,
+            background: "#f8fafc",
+            borderRadius: 8,
+            fontSize: 14,
+            border: "1px solid #e2e8f0",
+          }}
+        >
           <strong>Score V0:</strong> {initialScore.score} / 100
-          <span style={{ marginLeft: 12, color: '#64748b', fontSize: 12 }}>
+          <span style={{ marginLeft: 12, color: "#64748b", fontSize: 12 }}>
             (calculado {new Date(initialScore.computed_at).toLocaleString()})
           </span>
         </div>
-      )}
-      {initialScore === null && (
-        <div style={{ marginTop: 16, color: '#64748b', fontSize: 13 }}>
+      ) : (
+        <div style={{ marginTop: 16, color: "#64748b", fontSize: 13 }}>
           Sin score calculado aún. Sincronizá para generarlo.
         </div>
       )}
 
+      {/* Sync */}
       <SyncButton storeId={store_id} />
+
+      {/* Divider */}
+      <hr style={{ margin: "32px 0", borderColor: "#e2e8f0" }} />
+
+      {/* Policy panel (client component) */}
+      <PolicyPanel storeId={store_id} />
     </main>
   );
 }
