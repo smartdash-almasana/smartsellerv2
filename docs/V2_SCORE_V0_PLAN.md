@@ -140,3 +140,5 @@ GET /api/score/[store_id]
 | `v2_metrics_daily` | ✅ Tabla creada, sin filas |
 | `src/v2/api/score.ts` | ⚠️ Solo lee score existente; no calcula |
 | Fórmula V0 | 📋 Este documento (pendiente de implementar) |
+
+Related: see contract [docs/V2_SCORE_V0_CONTRACT.md](./V2_SCORE_V0_CONTRACT.md).
