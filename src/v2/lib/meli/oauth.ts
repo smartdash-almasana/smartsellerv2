@@ -15,12 +15,9 @@ export interface MeliUser {
     nickname: string | null;
 }
 
-interface OAuthStateRow {
-    state: string;
+interface ConsumeOAuthStateRow {
     code_verifier: string;
     user_id: string | null;
-    expires_at: string;
-    used_at: string | null;
 }
 
 function getRequiredEnv(name: string): string {
@@ -29,28 +26,36 @@ function getRequiredEnv(name: string): string {
     return value;
 }
 
-export async function consumeOAuthState(state: string): Promise<{ codeVerifier: string; userId: string }> {
+/**
+ * Atomically consumes an OAuth state (single-use, via DELETE...RETURNING).
+ * Uses service-role (supabaseAdmin) — bypasses RLS.
+ * Returns userId as null when /start was called without an active session.
+ *
+ * Race-condition safe: the DB function deletes the row atomically so no
+ * second consumer can claim the same state.
+ */
+export async function consumeOAuthState(state: string): Promise<{ codeVerifier: string; userId: string | null }> {
     const { data, error } = await supabaseAdmin
-        .from('v2_oauth_states')
-        .select('state, code_verifier, user_id, expires_at, used_at')
-        .eq('state', state)
-        .limit(1)
-        .maybeSingle<OAuthStateRow>();
+        .rpc('consume_oauth_state', { p_state: state })
+        .returns<ConsumeOAuthStateRow[]>();
 
-    if (error) throw new Error(`[meli/oauth] State lookup failed: ${error.message}`);
-    if (!data) throw new Error('[meli/oauth] Invalid state');
-    if (data.used_at) throw new Error('[meli/oauth] State already used');
-    if (!data.user_id) throw new Error('[meli/oauth] State is not bound to an authenticated user');
-    if (new Date(data.expires_at).getTime() < Date.now()) throw new Error('[meli/oauth] State expired');
+    if (error) {
+        console.error('[meli/oauth] consume_oauth_state RPC error:', error.message);
+        throw new Error(`[meli/oauth] State consume failed: ${error.message}`);
+    }
 
-    const { error: useError } = await supabaseAdmin
-        .from('v2_oauth_states')
-        .update({ used_at: new Date().toISOString() })
-        .eq('state', state)
-        .is('used_at', null);
+    const row = Array.isArray(data) ? data[0] : undefined;
+    if (!row) {
+        // State not found, expired, or already used (DELETE returned 0 rows)
+        console.warn('[meli/oauth] consumeOAuthState: no row returned — state invalid, expired, or already used');
+        throw new Error('[meli/oauth] Invalid state or session expired (db)');
+    }
 
-    if (useError) throw new Error(`[meli/oauth] Failed to consume state: ${useError.message}`);
-    return { codeVerifier: data.code_verifier, userId: data.user_id };
+    console.log(
+        '[meli/oauth] consumeOAuthState: state consumed OK; user_id =',
+        row.user_id ?? 'null (no session at /start)',
+    );
+    return { codeVerifier: row.code_verifier, userId: row.user_id ?? null };
 }
 
 export async function exchangeToken(code: string, codeVerifier: string): Promise<ExchangedTokens> {

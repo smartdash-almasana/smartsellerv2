@@ -4,7 +4,7 @@
 //
 // 1. Generate cryptographically random state + code_verifier
 // 2. Derive code_challenge (S256)
-// 3. Persist to v2_oauth_states (TTL = 10 min)
+// 3. Persist to v2_oauth_states (TTL = 15 min, via service-role)
 // 4. Redirect to ML authorization URL
 //
 // Env vars required: MELI_APP_ID, MELI_REDIRECT_URI
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
         );
     }
 
-    // Optionally bind state to authenticated Supabase user
+    // Optionally bind state to authenticated Supabase user (best-effort)
     const cookieStore = await cookies();
     const supabaseUser = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -55,13 +55,14 @@ export async function GET(req: NextRequest) {
     const userId = session?.user?.id ?? null;
 
     // Generate PKCE pair
-    const state = generateRandomBase64url(32);          // 256-bit state
-    const codeVerifier = generateRandomBase64url(48);    // 384-bit verifier
+    const state = generateRandomBase64url(32);           // 256-bit state
+    const codeVerifier = generateRandomBase64url(48);     // 384-bit verifier
     const codeChallenge = await deriveCodeChallenge(codeVerifier);
 
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min TTL
+    // TTL = 15 min (must cover the full ML authorization UX round-trip)
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-    // Persist PKCE state
+    // Persist PKCE state via service-role (bypasses RLS, guarantees write)
     const { error: insertErr } = await supabaseAdmin
         .from('v2_oauth_states')
         .insert({
@@ -75,6 +76,8 @@ export async function GET(req: NextRequest) {
         console.error('[auth/meli/start] Failed to persist state:', insertErr.message);
         return NextResponse.json({ error: 'Failed to initiate OAuth' }, { status: 500 });
     }
+
+    console.log('[auth/meli/start] state persisted; user_id =', userId ?? 'null', 'expires_at =', expiresAt);
 
     // Build ML authorization URL
     const authUrl = new URL('https://auth.mercadolibre.com.ar/authorization');
