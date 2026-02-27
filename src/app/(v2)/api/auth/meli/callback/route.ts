@@ -14,7 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { consumeOAuthState, exchangeToken, getMeliUser } from '@v2/lib/meli/oauth';
 import { upsertStoreAndMembership } from '@v2/lib/stores/linkStore';
-import { persistInstallationTokens } from '@v2/lib/meli/installations';
+import { persistInstallationTokens, createPendingInstallation } from '@v2/lib/meli/installations';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -29,6 +29,21 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
+
+    // ── Surface ML provider errors (e.g. user denied, app misconfigured) ─────
+    const mlError = url.searchParams.get('error');
+    const mlErrorDescription = url.searchParams.get('error_description');
+    if (mlError) {
+        console.error('[auth/meli/callback] ML returned error:', mlError, mlErrorDescription);
+        return NextResponse.json(
+            {
+                error: mlError,
+                error_description: mlErrorDescription ?? null,
+                hint: 'ML did not return code/state',
+            },
+            { status: 400 },
+        );
+    }
 
     if (!code || !state) {
         return NextResponse.json({ error: 'Missing code or state' }, { status: 400 });
@@ -64,15 +79,24 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        if (!userId) {
-            throw new Error('[auth/meli/callback] No authenticated user available — cannot link store');
-        }
-
         // ── 3. Exchange authorization code → tokens ───────────────────────────
         const tokens = await exchangeToken(code, codeVerifier);
 
         // ── 4. Fetch Mercado Libre user ───────────────────────────────────────
         const meliUser = await getMeliUser(tokens.access_token);
+
+        if (!userId) {
+            console.log('[auth/meli/callback] No user in session. Creating pending installation.');
+            const installationId = await createPendingInstallation({
+                providerKey: 'mercadolibre',
+                stateId: state,
+                externalAccountId: meliUser.id,
+                tokens,
+            });
+
+            // Redirect to completion flow (it will require login)
+            return NextResponse.redirect(new URL(`/install/meli/complete?installation_id=${installationId}`, appBaseUrl(request)));
+        }
 
         // ── 5. Upsert store + membership ──────────────────────────────────────
         const { storeId } = await upsertStoreAndMembership({
