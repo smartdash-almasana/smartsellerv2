@@ -20,10 +20,16 @@ interface ConsumeOAuthStateRow {
     user_id: string | null;
 }
 
-function getRequiredEnv(name: string): string {
-    const value = process.env[name];
-    if (!value) throw new Error(`[meli/oauth] Missing env: ${name}`);
-    return value;
+/**
+ * Fetches the first defined env var from a list of candidate names.
+ * We support both legacy MERCADOLIBRE_* and current MELI_* names.
+ */
+function getRequiredEnvAny(names: string[]): string {
+    for (const name of names) {
+        const value = process.env[name];
+        if (value && value.trim().length > 0) return value;
+    }
+    throw new Error(`[meli/oauth] Missing env: ${names.join(' | ')}`);
 }
 
 function computeExpiresAt(expires_in: unknown): string {
@@ -84,10 +90,14 @@ export function generateAuthorizationUrl(clientId: string, redirectUri: string):
  * - Mercado Libre will NOT return code_verifier in the response; do not “validate” it client-side.
  * - If PKCE is not required/used, pass codeVerifier='' (or undefined) and it will be omitted.
  */
-export async function exchangeCodeForTokens(code: string, codeVerifier?: string): Promise<ExchangedTokens> {
-    const clientId = getRequiredEnv('MERCADOLIBRE_CLIENT_ID');
-    const clientSecret = getRequiredEnv('MERCADOLIBRE_CLIENT_SECRET');
-    const redirectUri = getRequiredEnv('MERCADOLIBRE_REDIRECT_URI');
+export async function exchangeCodeForTokens(
+    code: string,
+    codeVerifier?: string
+): Promise<ExchangedTokens> {
+    // Prefer current env names in Vercel (MELI_*), fallback to legacy MERCADOLIBRE_*
+    const clientId = getRequiredEnvAny(['MELI_CLIENT_ID', 'MELI_APP_ID', 'MERCADOLIBRE_CLIENT_ID']);
+    const clientSecret = getRequiredEnvAny(['MELI_CLIENT_SECRET', 'MERCADOLIBRE_CLIENT_SECRET']);
+    const redirectUri = getRequiredEnvAny(['MELI_REDIRECT_URI', 'MERCADOLIBRE_REDIRECT_URI']);
 
     const body = new URLSearchParams({
         grant_type: 'authorization_code',
@@ -128,8 +138,8 @@ export async function exchangeCodeForTokens(code: string, codeVerifier?: string)
  * NOTE: refresh_token may rotate; always persist the NEW refresh_token returned.
  */
 export async function refreshTokens(refreshToken: string): Promise<ExchangedTokens> {
-    const clientId = getRequiredEnv('MERCADOLIBRE_CLIENT_ID');
-    const clientSecret = getRequiredEnv('MERCADOLIBRE_CLIENT_SECRET');
+    const clientId = getRequiredEnvAny(['MELI_CLIENT_ID', 'MELI_APP_ID', 'MERCADOLIBRE_CLIENT_ID']);
+    const clientSecret = getRequiredEnvAny(['MELI_CLIENT_SECRET', 'MERCADOLIBRE_CLIENT_SECRET']);
 
     const body = new URLSearchParams({
         grant_type: 'refresh_token',
