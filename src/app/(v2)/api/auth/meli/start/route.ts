@@ -15,6 +15,8 @@ import { supabaseAdmin } from '@v2/lib/supabase';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+const OAUTH_CTX_MAX_AGE_SECONDS = 15 * 60;
+
 // ─── PKCE helpers ─────────────────────────────────────────────────────────────
 function generateRandomBase64url(byteLength: number): string {
     const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
@@ -25,6 +27,13 @@ async function deriveCodeChallenge(verifier: string): Promise<string> {
     const encoded = new TextEncoder().encode(verifier);
     const digest = await crypto.subtle.digest('SHA-256', encoded);
     return Buffer.from(digest).toString('base64url');
+}
+
+function sanitizeNext(raw: string | null): string | null {
+    if (!raw) return null;
+    if (!raw.startsWith('/')) return null;
+    if (raw.startsWith('//')) return null;
+    return raw;
 }
 
 // ─── Route handler ────────────────────────────────────────────────────────────
@@ -59,6 +68,7 @@ export async function GET(req: NextRequest) {
     const codeVerifier = generateRandomBase64url(48);     // 384-bit verifier
     const codeChallenge = await deriveCodeChallenge(codeVerifier);
     const correlationId = state;
+    const nextPath = sanitizeNext(req.nextUrl.searchParams.get('next'));
 
     // TTL = 15 min (must cover the full ML authorization UX round-trip)
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
@@ -90,5 +100,38 @@ export async function GET(req: NextRequest) {
     authUrl.searchParams.set('code_challenge_method', 'S256');
 
     console.log('[auth/meli/start]', correlationId, 'redirecting to ML authorization');
-    return NextResponse.redirect(authUrl.toString());
+    const response = NextResponse.redirect(authUrl.toString());
+    response.cookies.set('meli_oauth_state', state, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+        maxAge: OAUTH_CTX_MAX_AGE_SECONDS,
+    });
+    response.cookies.set('meli_oauth_verifier', codeVerifier, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+        maxAge: OAUTH_CTX_MAX_AGE_SECONDS,
+    });
+    if (nextPath) {
+        response.cookies.set('meli_oauth_next', nextPath, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            path: '/',
+            maxAge: OAUTH_CTX_MAX_AGE_SECONDS,
+        });
+    } else {
+        response.cookies.set('meli_oauth_next', '', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 0,
+        });
+    }
+
+    return response;
 }
