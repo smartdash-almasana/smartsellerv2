@@ -44,9 +44,13 @@ export default function Header() {
                             {link.name}
                         </Link>
                     ))}
-                    <button className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-opacity-90 shadow-sm transition-all">
+                    <a
+                        href="/api/auth/meli/start"
+                        id="cta-header-desktop"
+                        className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-opacity-90 shadow-sm transition-all"
+                    >
                         Acceso Clientes
-                    </button>
+                    </a>
                 </nav>
 
                 {/* BOTÓN HAMBURGUESA (Móvil) */}
@@ -74,9 +78,14 @@ export default function Header() {
                             </Link>
                         ))}
                         <hr className="border-slate-100" />
-                        <button className="w-full rounded-lg bg-primary py-3 text-center font-bold text-white">
+                        <a
+                            href="/api/auth/meli/start"
+                            id="cta-header-mobile"
+                            onClick={toggleMenu}
+                            className="w-full rounded-lg bg-primary py-3 text-center font-bold text-white block"
+                        >
                             Acceso Clientes
-                        </button>
+                        </a>
                     </nav>
                 </div>
             )}

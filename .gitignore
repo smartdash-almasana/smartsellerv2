@@ -22,3 +22,5 @@ playwright-report/
 coverage/
 test_output.txt
 tmp-audit.md
+.vercel
+.env*.local
