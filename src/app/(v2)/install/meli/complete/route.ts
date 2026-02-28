@@ -20,6 +20,12 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+        // Fetch installation first so linked installations can bypass login gate.
+        const installation = await getPendingInstallation(installationId);
+        if (installation.linked_store_id) {
+            return NextResponse.redirect(new URL(`/dashboard/${installation.linked_store_id}`, appBaseUrl(request)));
+        }
+
         const cookieStore = await cookies();
         const supabaseUser = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,13 +46,6 @@ export async function GET(request: NextRequest) {
             // Set the `next` query param to return here after login
             loginUrl.searchParams.set('next', `/install/meli/complete?installation_id=${installationId}`);
             return NextResponse.redirect(loginUrl);
-        }
-
-        // Fetch pending installation
-        const installation = await getPendingInstallation(installationId);
-        if (installation.linked_store_id) {
-            // Already linked
-            return NextResponse.redirect(new URL(`/dashboard/${installation.linked_store_id}`, appBaseUrl(request)));
         }
 
         // Parse tokens and user payload 
