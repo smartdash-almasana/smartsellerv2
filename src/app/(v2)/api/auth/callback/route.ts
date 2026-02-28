@@ -12,12 +12,9 @@ function sanitizeNext(raw: string | null): string | null {
 export async function GET(req: NextRequest) {
     const cookieStore = await cookies();
 
-    const response = NextResponse.redirect(
-        new URL(
-            sanitizeNext(req.nextUrl.searchParams.get("next")) ?? "/post-login",
-            req.url
-        )
-    );
+    const nextPath =
+        sanitizeNext(req.nextUrl.searchParams.get("next")) ?? "/post-login";
+    const response = NextResponse.redirect(new URL(nextPath, req.url));
 
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,15 +23,23 @@ export async function GET(req: NextRequest) {
             cookies: {
                 getAll: () => cookieStore.getAll(),
                 setAll: (cookiesToSet) => {
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        response.cookies.set(name, value, options)
-                    );
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        response.cookies.set(name, value, options);
+                    });
                 },
             },
         }
     );
 
-    await supabase.auth.exchangeCodeForSession(req.url);
+    const code = req.nextUrl.searchParams.get("code");
+    if (!code) {
+        return NextResponse.json({ error: "Missing code" }, { status: 400 });
+    }
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+    }
 
     return response;
 }
