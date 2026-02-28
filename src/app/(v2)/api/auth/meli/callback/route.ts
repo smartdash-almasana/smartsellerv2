@@ -18,6 +18,28 @@ import { persistInstallationTokens, createPendingInstallation } from '@v2/lib/me
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+function oauthErrorResponse(request: NextRequest, message: string, details?: Record<string, unknown>) {
+    const retryHref = '/api/auth/meli/start';
+    const accept = request.headers.get('accept') ?? '';
+    if (accept.includes('text/html')) {
+        const html = `<!doctype html>
+<html lang="es">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+  <body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px;line-height:1.4">
+    <h1 style="margin:0 0 12px">Error en conexión Mercado Libre</h1>
+    <p style="margin:0 0 16px">${message}</p>
+    <p style="margin:0 0 20px"><a href="${retryHref}">Reintentar conexión</a></p>
+  </body>
+</html>`;
+        return new NextResponse(html, {
+            status: 400,
+            headers: { 'content-type': 'text/html; charset=utf-8' },
+        });
+    }
+
+    return NextResponse.json({ error: message, retry_url: retryHref, ...(details ?? {}) }, { status: 400 });
+}
+
 function appBaseUrl(request: NextRequest): string {
     const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
     const proto = request.headers.get('x-forwarded-proto') ?? 'http';
@@ -29,24 +51,22 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
+    const correlationId = state ?? 'missing_state';
 
     // ── Surface ML provider errors (e.g. user denied, app misconfigured) ─────
     const mlError = url.searchParams.get('error');
     const mlErrorDescription = url.searchParams.get('error_description');
     if (mlError) {
-        console.error('[auth/meli/callback] ML returned error:', mlError, mlErrorDescription);
-        return NextResponse.json(
-            {
-                error: mlError,
-                error_description: mlErrorDescription ?? null,
-                hint: 'ML did not return code/state',
-            },
-            { status: 400 },
-        );
+        console.error('[auth/meli/callback]', correlationId, 'ML returned error:', mlError, mlErrorDescription);
+        return oauthErrorResponse(request, String(mlError), {
+            error_description: mlErrorDescription ?? null,
+            hint: 'ML did not return code/state',
+            correlation_id: correlationId,
+        });
     }
 
     if (!code || !state) {
-        return NextResponse.json({ error: 'Missing code or state' }, { status: 400 });
+        return oauthErrorResponse(request, 'Missing code or state', { correlation_id: correlationId });
     }
 
     try {
@@ -75,7 +95,7 @@ export async function GET(request: NextRequest) {
                     userId ?? 'null',
                 );
             } catch (sessionErr) {
-                console.warn('[auth/meli/callback] Could not read session cookie:', sessionErr);
+                console.warn('[auth/meli/callback]', correlationId, 'Could not read session cookie:', sessionErr);
             }
         }
 
@@ -118,7 +138,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL('/post-login', appBaseUrl(request)));
     } catch (error) {
         const message = error instanceof Error ? error.message : 'OAuth callback failed';
-        console.error('[auth/meli/callback]', message);
-        return NextResponse.json({ error: message }, { status: 500 });
+        console.error('[auth/meli/callback]', correlationId, message);
+        return oauthErrorResponse(request, message, { correlation_id: correlationId });
     }
 }

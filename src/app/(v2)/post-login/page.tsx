@@ -1,6 +1,5 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 
 interface StoreSlim {
   store_id: string;
@@ -50,7 +49,7 @@ export default async function PostLoginPage() {
       <h1>Conecta tu tienda de Mercado Libre</h1>
       <p>No encontramos tiendas vinculadas a tu cuenta.</p>
       <p>
-        <Link href="/api/auth/meli/start">Conectar Mercado Libre</Link>
+        <a href="/api/auth/meli/start">Conectar Mercado Libre</a>
       </p>
     </main>
   );

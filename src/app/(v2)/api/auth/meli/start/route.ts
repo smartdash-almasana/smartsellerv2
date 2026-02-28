@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
     const state = generateRandomBase64url(32);           // 256-bit state
     const codeVerifier = generateRandomBase64url(48);     // 384-bit verifier
     const codeChallenge = await deriveCodeChallenge(codeVerifier);
+    const correlationId = state;
 
     // TTL = 15 min (must cover the full ML authorization UX round-trip)
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Failed to initiate OAuth' }, { status: 500 });
     }
 
-    console.log('[auth/meli/start] state persisted; user_id =', userId ?? 'null', 'expires_at =', expiresAt);
+    console.log('[auth/meli/start]', correlationId, 'state persisted; user_id =', userId ?? 'null', 'expires_at =', expiresAt);
 
     // Build ML authorization URL
     const authUrl = new URL('https://auth.mercadolibre.com.ar/authorization');
@@ -88,5 +89,6 @@ export async function GET(req: NextRequest) {
     authUrl.searchParams.set('code_challenge', codeChallenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
 
+    console.log('[auth/meli/start]', correlationId, 'redirecting to ML authorization');
     return NextResponse.redirect(authUrl.toString());
 }
