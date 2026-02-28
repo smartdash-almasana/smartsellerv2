@@ -107,8 +107,10 @@ export async function exchangeCodeForTokens(
         redirect_uri: redirectUri,
     });
 
-    // ✅ PKCE optional (only attach if present)
-    if (codeVerifier && codeVerifier.trim().length > 0) {
+    const usePkce = process.env.MELI_USE_PKCE?.toLowerCase() !== 'false';
+
+    // ✅ PKCE optional (only attach if present and enabled)
+    if (usePkce && codeVerifier && codeVerifier.trim().length > 0) {
         body.set('code_verifier', codeVerifier);
     }
 

@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
     const correlationId = state ?? 'missing_state';
+    const usePkce = process.env.MELI_USE_PKCE?.toLowerCase() !== 'false';
     const cookieStore = await cookies();
     const verifierCookie = cookieStore.get('meli_oauth_verifier')?.value ?? '';
     const stateCookie = cookieStore.get('meli_oauth_state')?.value ?? '';
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
         has_error_param: false,
         error: null as string | null,
         error_description: null as string | null,
-        has_verifier_cookie: verifierCookie.length > 0,
+        has_verifier_cookie: usePkce ? verifierCookie.length > 0 : false,
         verifier_cookie_length: verifierCookie.length,
         has_state_cookie: stateCookie.length > 0,
         state_cookie_length: stateCookie.length,
@@ -197,7 +198,7 @@ export async function GET(request: NextRequest) {
         // ── 3. Exchange authorization code → tokens ───────────────────────────
         let tokens;
         try {
-            tokens = await exchangeCodeForTokens(code, codeVerifier);
+            tokens = await exchangeCodeForTokens(code, usePkce ? codeVerifier : undefined);
         } catch (tokenErr) {
             const message = tokenErr instanceof Error ? tokenErr.message : 'Token exchange failed';
             const parsed = extractTokenExchangeError(message);

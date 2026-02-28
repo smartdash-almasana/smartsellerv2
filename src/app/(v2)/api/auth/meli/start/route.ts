@@ -64,9 +64,10 @@ export async function GET(req: NextRequest) {
     const userId = session?.user?.id ?? null;
 
     // Generate PKCE pair
+    const usePkce = process.env.MELI_USE_PKCE?.toLowerCase() !== 'false';
     const state = generateRandomBase64url(32);           // 256-bit state
-    const codeVerifier = generateRandomBase64url(48);     // 384-bit verifier
-    const codeChallenge = await deriveCodeChallenge(codeVerifier);
+    const codeVerifier = usePkce ? generateRandomBase64url(48) : '';     // 384-bit verifier
+    const codeChallenge = usePkce ? await deriveCodeChallenge(codeVerifier) : '';
     const correlationId = state;
     const nextPath = sanitizeNext(req.nextUrl.searchParams.get('next'));
 
@@ -96,8 +97,10 @@ export async function GET(req: NextRequest) {
     authUrl.searchParams.set('client_id', appId);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('state', state);
-    authUrl.searchParams.set('code_challenge', codeChallenge);
-    authUrl.searchParams.set('code_challenge_method', 'S256');
+    if (usePkce) {
+        authUrl.searchParams.set('code_challenge', codeChallenge);
+        authUrl.searchParams.set('code_challenge_method', 'S256');
+    }
 
     console.log('[auth/meli/start]', correlationId, 'redirecting to ML authorization');
     const response = NextResponse.redirect(authUrl.toString());
@@ -108,13 +111,15 @@ export async function GET(req: NextRequest) {
         path: '/',
         maxAge: OAUTH_CTX_MAX_AGE_SECONDS,
     });
-    response.cookies.set('meli_oauth_verifier', codeVerifier, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: OAUTH_CTX_MAX_AGE_SECONDS,
-    });
+    if (usePkce) {
+        response.cookies.set('meli_oauth_verifier', codeVerifier, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            path: '/',
+            maxAge: OAUTH_CTX_MAX_AGE_SECONDS,
+        });
+    }
     if (nextPath) {
         response.cookies.set('meli_oauth_next', nextPath, {
             httpOnly: true,

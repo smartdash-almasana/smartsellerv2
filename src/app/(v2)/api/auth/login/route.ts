@@ -11,6 +11,7 @@ function sanitizeNext(raw: string | null): string | null {
 
 export async function GET(req: NextRequest) {
     const cookieStore = await cookies();
+    const pendingCookies: Array<{ name: string; value: string; options: any }> = [];
 
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
                 getAll: () => cookieStore.getAll(),
                 setAll: (cookiesToSet) => {
                     cookiesToSet.forEach(({ name, value, options }) =>
-                        cookieStore.set(name, value, options)
+                        pendingCookies.push({ name, value, options })
                     );
                 },
             },
@@ -44,5 +45,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.redirect(data.url);
+    const res = NextResponse.redirect(data.url);
+    pendingCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
+    return res;
 }
