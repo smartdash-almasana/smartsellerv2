@@ -1,32 +1,15 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, X } from 'lucide-react';
 
-function sanitizeNext(raw: string | null): string | null {
-    if (!raw) return null;
-    if (!raw.startsWith('/')) return null;
-    if (raw.startsWith('//')) return null;
-    return raw;
-}
-
 export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [startHref, setStartHref] = useState('/api/auth/meli/start');
+    const startHref = '/api/auth/meli/start';
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-
-    useEffect(() => {
-        const pathname = window.location.pathname;
-        const nextParam = sanitizeNext(new URLSearchParams(window.location.search).get('next'));
-        if (pathname === '/enter' && nextParam) {
-            setStartHref(`/api/auth/meli/start?next=${encodeURIComponent(nextParam)}`);
-            return;
-        }
-        setStartHref('/api/auth/meli/start');
-    }, []);
 
     const navLinks = [
         { name: 'Producto', href: '#features' },

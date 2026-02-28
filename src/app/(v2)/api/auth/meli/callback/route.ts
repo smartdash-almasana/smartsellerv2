@@ -12,7 +12,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { consumeOAuthState, exchangeToken, getMeliUser } from '@v2/lib/meli/oauth';
+import { consumeOAuthState, exchangeCodeForTokens, getMeliUser } from '@v2/lib/meli/oauth';
 import { upsertStoreAndMembership } from '@v2/lib/stores/linkStore';
 import { persistInstallationTokens, createPendingInstallation } from '@v2/lib/meli/installations';
 import { createServerClient } from '@supabase/ssr';
@@ -197,7 +197,7 @@ export async function GET(request: NextRequest) {
         // ── 3. Exchange authorization code → tokens ───────────────────────────
         let tokens;
         try {
-            tokens = await exchangeToken(code, codeVerifier);
+            tokens = await exchangeCodeForTokens(code, codeVerifier);
         } catch (tokenErr) {
             const message = tokenErr instanceof Error ? tokenErr.message : 'Token exchange failed';
             const parsed = extractTokenExchangeError(message);

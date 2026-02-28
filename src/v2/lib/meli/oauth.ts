@@ -6,7 +6,7 @@ const MELI_ME_URL = 'https://api.mercadolibre.com/users/me';
 export interface ExchangedTokens {
     access_token: string;
     refresh_token: string;
-    expires_at: string;
+    expires_at: string; // ISO string
     raw: unknown;
 }
 
@@ -26,15 +26,23 @@ function getRequiredEnv(name: string): string {
     return value;
 }
 
+function computeExpiresAt(expires_in: unknown): string {
+    const n = typeof expires_in === 'number' ? expires_in : Number(expires_in);
+    if (!Number.isFinite(n) || n <= 0) return '';
+    return new Date(Date.now() + n * 1000).toISOString();
+}
+
 /**
  * Atomically consumes an OAuth state (single-use, via DELETE...RETURNING).
  * Uses service-role (supabaseAdmin) — bypasses RLS.
- * Returns userId as null when /start was called without an active session.
  *
- * Race-condition safe: the DB function deletes the row atomically so no
- * second consumer can claim the same state.
+ * IMPORTANT:
+ * - If the state is invalid/expired/used, we THROW. The caller (callback route)
+ *   should catch and render diagnostics (never silently continue).
  */
-export async function consumeOAuthState(state: string): Promise<{ codeVerifier: string; userId: string | null }> {
+export async function consumeOAuthState(
+    state: string
+): Promise<{ codeVerifier: string; userId: string | null }> {
     const { data, error } = await supabaseAdmin
         .rpc('consume_oauth_state', { p_state: state })
         .returns<ConsumeOAuthStateRow[]>();
@@ -46,63 +54,127 @@ export async function consumeOAuthState(state: string): Promise<{ codeVerifier: 
 
     const row = Array.isArray(data) ? data[0] : undefined;
     if (!row) {
-        // State not found, expired, or already used (DELETE returned 0 rows)
-        console.warn('[meli/oauth] consumeOAuthState: no row returned — state invalid, expired, or already used');
+        console.warn(
+            '[meli/oauth] consumeOAuthState: no row returned — state invalid, expired, or already used'
+        );
         throw new Error('[meli/oauth] Invalid state or session expired (db)');
     }
 
-    console.log(
-        '[meli/oauth] consumeOAuthState: state consumed OK; user_id =',
-        row.user_id ?? 'null (no session at /start)',
-    );
-    return { codeVerifier: row.code_verifier, userId: row.user_id ?? null };
-}
-
-export async function exchangeToken(code: string, codeVerifier: string): Promise<ExchangedTokens> {
-    const res = await fetch(MELI_TOKEN_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            Accept: 'application/json',
-        },
-        body: new URLSearchParams({
-            grant_type: 'authorization_code',
-            client_id: getRequiredEnv('MELI_APP_ID'),
-            client_secret: getRequiredEnv('MELI_CLIENT_SECRET'),
-            code,
-            redirect_uri: getRequiredEnv('MELI_REDIRECT_URI'),
-            code_verifier: codeVerifier,
-        }),
-        cache: 'no-store',
-    });
-
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(`[meli/oauth] Token exchange failed (${res.status})`);
-    if (!body.access_token || !body.refresh_token || !body.expires_in) {
-        throw new Error('[meli/oauth] Token response missing required fields');
-    }
-
     return {
-        access_token: String(body.access_token),
-        refresh_token: String(body.refresh_token),
-        expires_at: new Date(Date.now() + Number(body.expires_in) * 1000).toISOString(),
-        raw: body,
+        codeVerifier: row.code_verifier,
+        userId: row.user_id || null,
     };
 }
 
-export async function getMeliUser(accessToken: string): Promise<MeliUser> {
-    const res = await fetch(MELI_ME_URL, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
-        cache: 'no-store',
+/**
+ * Generates authorization URL (base).
+ * NOTE: In SmartSeller V2, /start usually builds the full URL including state and optional PKCE.
+ */
+export function generateAuthorizationUrl(clientId: string, redirectUri: string): string {
+    return `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${encodeURIComponent(
+        clientId
+    )}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+}
+
+/**
+ * Exchanges an authorization code for tokens.
+ *
+ * PKCE:
+ * - If you are using PKCE, you MUST send code_verifier in the token exchange.
+ * - Mercado Libre will NOT return code_verifier in the response; do not “validate” it client-side.
+ * - If PKCE is not required/used, pass codeVerifier='' (or undefined) and it will be omitted.
+ */
+export async function exchangeCodeForTokens(code: string, codeVerifier?: string): Promise<ExchangedTokens> {
+    const clientId = getRequiredEnv('MERCADOLIBRE_CLIENT_ID');
+    const clientSecret = getRequiredEnv('MERCADOLIBRE_CLIENT_SECRET');
+    const redirectUri = getRequiredEnv('MERCADOLIBRE_REDIRECT_URI');
+
+    const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
     });
 
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(`[meli/oauth] users/me failed (${res.status})`);
-    if (body.id === undefined || body.id === null) throw new Error('[meli/oauth] users/me missing id');
+    // ✅ PKCE optional (only attach if present)
+    if (codeVerifier && codeVerifier.trim().length > 0) {
+        body.set('code_verifier', codeVerifier);
+    }
+
+    const response = await fetch(MELI_TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+        throw new Error(`[meli/oauth] Failed to exchange code: ${text}`);
+    }
+
+    const data = JSON.parse(text) as any;
 
     return {
-        id: String(body.id),
-        nickname: body.nickname ? String(body.nickname) : null,
+        access_token: String(data.access_token ?? ''),
+        refresh_token: String(data.refresh_token ?? ''),
+        expires_at: computeExpiresAt(data.expires_in),
+        raw: data,
+    };
+}
+
+/**
+ * Refreshes tokens using refresh_token.
+ * NOTE: refresh_token may rotate; always persist the NEW refresh_token returned.
+ */
+export async function refreshTokens(refreshToken: string): Promise<ExchangedTokens> {
+    const clientId = getRequiredEnv('MERCADOLIBRE_CLIENT_ID');
+    const clientSecret = getRequiredEnv('MERCADOLIBRE_CLIENT_SECRET');
+
+    const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+    });
+
+    const response = await fetch(MELI_TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+        throw new Error(`[meli/oauth] Failed to refresh token: ${text}`);
+    }
+
+    const data = JSON.parse(text) as any;
+
+    return {
+        access_token: String(data.access_token ?? ''),
+        refresh_token: String(data.refresh_token ?? ''),
+        expires_at: computeExpiresAt(data.expires_in),
+        raw: data,
+    };
+}
+
+/**
+ * Fetches user information from Mercado Libre.
+ */
+export async function getMeliUser(access_token: string): Promise<MeliUser> {
+    const response = await fetch(MELI_ME_URL, {
+        headers: { Authorization: `Bearer ${access_token}` },
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+        throw new Error(`[meli/oauth] Failed to fetch user: ${text}`);
+    }
+
+    const data = JSON.parse(text) as any;
+    return {
+        id: String(data.id ?? ''),
+        nickname: data.nickname ? String(data.nickname) : null,
     };
 }
