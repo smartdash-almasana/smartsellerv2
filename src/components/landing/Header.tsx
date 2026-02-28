@@ -1,14 +1,32 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, X } from 'lucide-react';
 
+function sanitizeNext(raw: string | null): string | null {
+    if (!raw) return null;
+    if (!raw.startsWith('/')) return null;
+    if (raw.startsWith('//')) return null;
+    return raw;
+}
+
 export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [startHref, setStartHref] = useState('/api/auth/meli/start');
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+    useEffect(() => {
+        const pathname = window.location.pathname;
+        const nextParam = sanitizeNext(new URLSearchParams(window.location.search).get('next'));
+        if (pathname === '/enter' && nextParam) {
+            setStartHref(`/api/auth/meli/start?next=${encodeURIComponent(nextParam)}`);
+            return;
+        }
+        setStartHref('/api/auth/meli/start');
+    }, []);
 
     const navLinks = [
         { name: 'Producto', href: '#features' },
@@ -45,7 +63,7 @@ export default function Header() {
                         </Link>
                     ))}
                     <a
-                        href="/api/auth/meli/start"
+                        href={startHref}
                         id="cta-header-desktop"
                         className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-opacity-90 shadow-sm transition-all"
                     >
@@ -79,7 +97,7 @@ export default function Header() {
                         ))}
                         <hr className="border-slate-100" />
                         <a
-                            href="/api/auth/meli/start"
+                            href={startHref}
                             id="cta-header-mobile"
                             onClick={toggleMenu}
                             className="w-full rounded-lg bg-primary py-3 text-center font-bold text-white block"
