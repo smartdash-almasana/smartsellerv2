@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../lib/supabase';
+import { logIngestAttempt } from './ingest-attempts';
 
 type JsonMap = Record<string, unknown>;
 
@@ -117,19 +118,38 @@ export async function runV2WebhookToDomainWorkerWithDeps(
 
     for (const row of rows) {
         const mapped = mapTopic(row.topic);
-        const created = await deps.insertDomainEvent({
-            source_event_id: row.event_id,
-            store_id: row.store_id,
-            tenant_id: row.tenant_id ?? null,
-            event_type: mapped.event_type,
-            entity_type: mapped.entity_type,
-            entity_id: extractEntityId(row.resource ?? null),
-            occurred_at: row.received_at,
-            payload: (row.raw_payload as JsonMap | null) ?? null,
-        });
+        try {
+            const created = await deps.insertDomainEvent({
+                source_event_id: row.event_id,
+                store_id: row.store_id,
+                tenant_id: row.tenant_id ?? null,
+                event_type: mapped.event_type,
+                entity_type: mapped.entity_type,
+                entity_id: extractEntityId(row.resource ?? null),
+                occurred_at: row.received_at,
+                payload: (row.raw_payload as JsonMap | null) ?? null,
+            });
 
-        if (created) inserted += 1;
-        else deduped += 1;
+            if (created) inserted += 1;
+            else deduped += 1;
+
+            await logIngestAttempt({
+                event_id: row.event_id,
+                store_id: row.store_id,
+                worker: 'v2-webhook-to-domain',
+                status: created ? 'ok' : 'skipped',
+            });
+        } catch (error: any) {
+            await logIngestAttempt({
+                event_id: row.event_id,
+                store_id: row.store_id,
+                worker: 'v2-webhook-to-domain',
+                status: 'error',
+                error_message: error.message,
+                error_detail: { stack: error.stack },
+            });
+            throw error;
+        }
     }
 
     return {

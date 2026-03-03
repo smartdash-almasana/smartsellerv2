@@ -21,6 +21,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@v2/lib/supabase';
 import { getValidToken } from '@v2/lib/meli-token';
+import { logIngestAttempt } from '@v2/ingest/ingest-attempts';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -181,8 +182,22 @@ async function syncOrders(params: {
 
         if (deErr) {
             console.error(`[meli/sync] domain_event upsert failed for order ${order.id}:`, deErr.message);
+            await logIngestAttempt({
+                event_id: whRow.event_id,
+                store_id: storeId,
+                worker: 'meli-sync',
+                status: 'error',
+                error_message: deErr.message,
+                error_detail: deErr,
+            });
         } else {
             domainCounts[eventType] = (domainCounts[eventType] ?? 0) + 1;
+            await logIngestAttempt({
+                event_id: whRow.event_id,
+                store_id: storeId,
+                worker: 'meli-sync',
+                status: 'ok',
+            });
         }
     }
 

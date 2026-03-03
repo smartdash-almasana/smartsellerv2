@@ -6,6 +6,7 @@
 
 import { supabaseAdmin } from '../lib/supabase';
 import type { WebhookEventRow } from '../types/v2';
+import { logIngestAttempt } from './ingest-attempts';
 
 // ─── Topic → event_type / entity_type mapping ────────────────────────────────
 interface TopicMapping {
@@ -42,9 +43,9 @@ export async function normalizeWebhookEvent(eventId: string): Promise<Normalizer
     // 1. Read the webhook event record
     const { data: webhookEvent, error: readError } = await supabaseAdmin
         .from('v2_webhook_events')
-        .select('event_id, topic, resource, raw_payload, received_at')
+        .select('event_id, store_id, topic, resource, raw_payload, received_at')
         .eq('event_id', eventId)
-        .maybeSingle<Pick<WebhookEventRow, 'event_id' | 'topic' | 'resource' | 'raw_payload' | 'received_at'>>();
+        .maybeSingle<Pick<WebhookEventRow, 'event_id' | 'store_id' | 'topic' | 'resource' | 'raw_payload' | 'received_at'>>();
 
     if (readError) {
         throw new Error(
@@ -71,30 +72,49 @@ export async function normalizeWebhookEvent(eventId: string): Promise<Normalizer
             ? rawPayload.date_created
             : new Date().toISOString();
 
-    // 5. Insert into v2_domain_events
-    // throwOnError() throws on unexpected DB errors — no need for post-check on insertError.
-    // ON CONFLICT (source_event_id, event_type) DO NOTHING returns [] with no error.
-    const { data: inserted } = await supabaseAdmin
-        .from('v2_domain_events')
-        .upsert(
-            {
-                source_event_id: webhookEvent.event_id,
-                event_type,
-                entity_type,
-                entity_id,
-                occurred_at,
-                payload: rawPayload,
-            },
-            { onConflict: 'source_event_id', ignoreDuplicates: true }
-        )
-        .select('domain_event_id')
-        .throwOnError();
+    try {
+        // 5. Insert into v2_domain_events
+        // throwOnError() throws on unexpected DB errors — no need for post-check on insertError.
+        // ON CONFLICT (source_event_id, event_type) DO NOTHING returns [] with no error.
+        const { data: inserted } = await supabaseAdmin
+            .from('v2_domain_events')
+            .upsert(
+                {
+                    source_event_id: webhookEvent.event_id,
+                    event_type,
+                    entity_type,
+                    entity_id,
+                    occurred_at,
+                    payload: rawPayload,
+                },
+                { onConflict: 'source_event_id', ignoreDuplicates: true }
+            )
+            .select('domain_event_id')
+            .throwOnError();
 
-    // If conflict → inserted is [] → domain_event_id is null (not an error)
-    const domain_event_id: string | null =
-        Array.isArray(inserted) && inserted.length > 0
-            ? (inserted[0] as { domain_event_id: string }).domain_event_id
-            : null;
+        // If conflict → inserted is [] → domain_event_id is null (not an error)
+        const domain_event_id: string | null =
+            Array.isArray(inserted) && inserted.length > 0
+                ? (inserted[0] as { domain_event_id: string }).domain_event_id
+                : null;
 
-    return { domain_event_id };
+        await logIngestAttempt({
+            event_id: webhookEvent.event_id,
+            store_id: webhookEvent.store_id,
+            worker: 'normalizer',
+            status: domain_event_id ? 'ok' : 'skipped',
+        });
+
+        return { domain_event_id };
+    } catch (error: any) {
+        await logIngestAttempt({
+            event_id: webhookEvent.event_id,
+            store_id: webhookEvent.store_id,
+            worker: 'normalizer',
+            status: 'error',
+            error_message: error.message,
+            error_detail: { stack: error.stack },
+        });
+        throw error;
+    }
 }
