@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@v2/lib/supabase';
+import { getValidToken } from '@v2/lib/meli-token';
 
 const MELI_TOKEN_URL = 'https://api.mercadolibre.com/oauth/token';
 const MELI_ME_URL = 'https://api.mercadolibre.com/users/me';
@@ -174,9 +175,10 @@ export async function refreshTokens(refreshToken: string): Promise<ExchangedToke
 /**
  * Fetches user information from Mercado Libre.
  */
-export async function getMeliUser(access_token: string): Promise<MeliUser> {
+export async function getMeliUser(storeId: string): Promise<MeliUser> {
+    const accessToken = await getValidToken(storeId);
     const response = await fetch(MELI_ME_URL, {
-        headers: { Authorization: `Bearer ${access_token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     const text = await response.text();

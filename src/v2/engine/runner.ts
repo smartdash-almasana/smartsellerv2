@@ -13,12 +13,22 @@ export interface EngineRunResult {
     signals: number;
 }
 
-export async function runEngineForStore(storeId: string): Promise<EngineRunResult> {
-    const { data, error } = await supabaseAdmin
-        .rpc('v2_run_engine_for_store', { p_store_id: storeId })
-        .throwOnError();
+export async function runEngineForStoreWithDeps(
+    storeId: string,
+    rpc: (fn: string, params: { p_store_id: string }) => Promise<{ data: unknown; error: unknown }>
+): Promise<EngineRunResult> {
+    const { data, error } = await rpc('v2_run_engine_for_store', { p_store_id: storeId });
 
     if (error) throw error;
 
     return data as EngineRunResult;
+}
+
+export async function runEngineForStore(storeId: string): Promise<EngineRunResult> {
+    return runEngineForStoreWithDeps(storeId, async (fn, params) => {
+        const { data, error } = await supabaseAdmin
+            .rpc(fn, params)
+            .throwOnError();
+        return { data, error };
+    });
 }

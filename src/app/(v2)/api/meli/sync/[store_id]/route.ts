@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@v2/lib/supabase';
+import { getValidToken } from '@v2/lib/meli-token';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,25 +71,10 @@ async function getMembership(
     return data ?? null;
 }
 
-// ─── Token loader ─────────────────────────────────────────────────────────────
-
-async function getActiveToken(storeId: string): Promise<string | null> {
-    const { data } = await supabaseAdmin
-        .from('v2_oauth_tokens')
-        .select('access_token, expires_at, status')
-        .eq('store_id', storeId)
-        .eq('status', 'active')
-        .limit(1)
-        .maybeSingle<{ access_token: string; expires_at: string; status: string }>();
-
-    if (!data) return null;
-    // TODO: refresh if expires_at <= now (PORT_LATER: single-flight atomic refresh)
-    return data.access_token;
-}
-
 // ─── ML Orders fetcher ────────────────────────────────────────────────────────
 
-async function fetchMeliOrders(accessToken: string): Promise<MeliOrder[]> {
+async function fetchMeliOrders(storeId: string): Promise<MeliOrder[]> {
+    const accessToken = await getValidToken(storeId);
     const since = new Date();
     since.setUTCDate(since.getUTCDate() - 14);
     const sinceIso = since.toISOString().slice(0, 10); // YYYY-MM-DD
@@ -224,19 +210,10 @@ export async function POST(
     }
     const { tenant_id } = membership;
 
-    // 3. Token
-    const accessToken = await getActiveToken(store_id);
-    if (!accessToken) {
-        return NextResponse.json(
-            { error: 'No active token found for this store. Please reconnect Mercado Libre.' },
-            { status: 422 }
-        );
-    }
-
-    // 4. Fetch orders from ML
+    // 3. Fetch orders from ML (token resolved internally by Token Gate)
     let orders: MeliOrder[];
     try {
-        orders = await fetchMeliOrders(accessToken);
+        orders = await fetchMeliOrders(store_id);
     } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error('[meli/sync] ML fetch failed:', msg);

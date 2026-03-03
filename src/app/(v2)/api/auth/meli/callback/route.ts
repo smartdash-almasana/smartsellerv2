@@ -12,7 +12,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { consumeOAuthState, exchangeCodeForTokens, getMeliUser } from '@v2/lib/meli/oauth';
+import { consumeOAuthState, exchangeCodeForTokens } from '@v2/lib/meli/oauth';
 import { upsertStoreAndMembership } from '@v2/lib/stores/linkStore';
 import { persistInstallationTokens, createPendingInstallation } from '@v2/lib/meli/installations';
 import { createServerClient } from '@supabase/ssr';
@@ -210,15 +210,24 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // ── 4. Fetch Mercado Libre user ───────────────────────────────────────
-        const meliUser = await getMeliUser(tokens.access_token);
+        // ── 4. Resolve Mercado Libre user id from token response ─────────────
+        const tokenRaw = tokens.raw as { user_id?: string | number } | null;
+        const externalAccountId = tokenRaw?.user_id !== undefined && tokenRaw?.user_id !== null
+            ? String(tokenRaw.user_id)
+            : null;
+        if (!externalAccountId) {
+            return diagnosticResponse({
+                ...baseDiagnostics,
+                token_exchange_error_message: 'Token exchange response missing user_id',
+            });
+        }
 
         if (!userId) {
             console.log('[auth/meli/callback] No user in session. Creating pending installation.');
             const installationId = await createPendingInstallation({
                 providerKey: 'mercadolibre',
                 stateId: state,
-                externalAccountId: meliUser.id,
+                externalAccountId,
                 tokens,
             });
 
@@ -236,8 +245,8 @@ export async function GET(request: NextRequest) {
         const { storeId } = await upsertStoreAndMembership({
             userId,
             providerKey: 'mercadolibre',
-            externalAccountId: meliUser.id,
-            displayName: meliUser.nickname ? `ML ${meliUser.nickname}` : `ML ${meliUser.id}`,
+            externalAccountId,
+            displayName: `ML ${externalAccountId}`,
         });
 
         // ── 6. Persist tokens ─────────────────────────────────────────────────

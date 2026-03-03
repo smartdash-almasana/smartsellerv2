@@ -32,6 +32,8 @@ interface MeliTokenResponse {
     token_type: string;
 }
 
+type TokenSnapshot = Pick<TokenRow, 'access_token' | 'refresh_token' | 'expires_at' | 'status'>;
+
 // ─── Sentinel error ───────────────────────────────────────────────────────────
 export class ReauthorizationRequired extends Error {
     constructor(public readonly storeId: string) {
@@ -43,6 +45,10 @@ export class ReauthorizationRequired extends Error {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MELI_TOKEN_URL = 'https://api.mercadolibre.com/oauth/token';
 const REFRESH_WINDOW_MS = 120_000; // 2 minutes
+const refreshLocks = new Map<string, Promise<string>>();
+
+let readTokenSnapshotForStore: ((storeId: string) => Promise<TokenSnapshot | null>) | null = null;
+let refreshTokenOverride: ((storeId: string) => Promise<string>) | null = null;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function isExpiringSoon(expiresAt: string): boolean {
@@ -133,17 +139,26 @@ export async function refreshToken(storeId: string): Promise<string> {
     return meli.access_token;
 }
 
-// ─── Public: main entry point ─────────────────────────────────────────────────
-export async function getValidToken(storeId: string): Promise<string> {
+async function fetchTokenSnapshot(storeId: string): Promise<TokenSnapshot | null> {
     const { data: row, error } = await supabaseAdmin
         .from('v2_oauth_tokens')
         .select('access_token, refresh_token, expires_at, status')
         .eq('store_id', storeId)
-        .maybeSingle<Pick<TokenRow, 'access_token' | 'refresh_token' | 'expires_at' | 'status'>>();
+        .maybeSingle<TokenSnapshot>();
 
     if (error) {
         throw new Error(`[meli-token] DB read error for store ${storeId}: ${error.message}`);
     }
+
+    return row;
+}
+
+// ─── Public: main entry point ─────────────────────────────────────────────────
+export async function getValidToken(storeId: string): Promise<string> {
+    const row = readTokenSnapshotForStore
+        ? await readTokenSnapshotForStore(storeId)
+        : await fetchTokenSnapshot(storeId);
+
     if (!row) {
         throw new Error(`[meli-token] No token record for store ${storeId}`);
     }
@@ -153,8 +168,40 @@ export async function getValidToken(storeId: string): Promise<string> {
 
     // If expiring soon, refresh transparently
     if (isExpiringSoon(row.expires_at)) {
-        return refreshToken(storeId);
+        const existing = refreshLocks.get(storeId);
+        if (existing) {
+            return existing;
+        }
+
+        const refreshPromise = (refreshTokenOverride ?? refreshToken)(storeId);
+        refreshLocks.set(storeId, refreshPromise);
+        try {
+            return await refreshPromise;
+        } finally {
+            if (refreshLocks.get(storeId) === refreshPromise) {
+                refreshLocks.delete(storeId);
+            }
+        }
     }
 
     return row.access_token;
+}
+
+// Test-only hooks: keep runtime behavior unchanged when not configured.
+export function __setMeliTokenTestHooks(hooks: {
+    readTokenSnapshotForStore?: (storeId: string) => Promise<TokenSnapshot | null>;
+    refreshToken?: (storeId: string) => Promise<string>;
+}): void {
+    readTokenSnapshotForStore = hooks.readTokenSnapshotForStore ?? null;
+    refreshTokenOverride = hooks.refreshToken ?? null;
+}
+
+export function __resetMeliTokenTestHooks(): void {
+    readTokenSnapshotForStore = null;
+    refreshTokenOverride = null;
+    refreshLocks.clear();
+}
+
+export function __getRefreshLocksSize(): number {
+    return refreshLocks.size;
 }
