@@ -203,3 +203,25 @@ DETAIL:  Failing row contains (40212d41-c054-45d6-8b5e-0ef9b82da0ca, 0485e5e6-5b
 
 ### Clasificación Final
 **RIESGO** - La prueba E2E falló en el PASO 2 debido a una violación de constraint (`provider_event_id` is null). La ejecución se detuvo según las reglas establecidas ("Si algo falla, detener y reportar evidencia"). No se pudieron ejecutar los PASOS 3, 4 y 5.
+
+## CIERRE DÍA 5 — HARDENING VALIDADO
+
+Evidencia de run post-fix (sin zombie):
+
+```sql
+SELECT run_id, status, started_at, finished_at
+FROM v2_engine_runs
+WHERE store_id = '0485e5e6-5bc9-4e85-bdbe-e0c9ff20a0e2'
+ORDER BY started_at DESC
+LIMIT 1;
+```
+
+Resultado observado:
+
+| run_id | status | started_at | finished_at |
+| :--- | :--- | :--- | :--- |
+| `19f1f2c6-88e4-468b-b799-2b872c12ac0f` | **done** ✅ | 2026-03-03 02:21:59+00 | **2026-03-03 02:21:59+00** ✅ |
+
+Aclaración explícita:
+- El registro previo en estado `running` con `finished_at = null` corresponde a una ejecución anterior al fix de finalización de `v2_engine_runs`.
+- Con el hardening aplicado en `src/v2/api/score.ts`, la finalización de run ahora valida error de `update` y evita cerrar en silencio.
