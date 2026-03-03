@@ -164,3 +164,42 @@ ORDER BY computed_at DESC LIMIT 1;
 ### Estado general: ⚠️ RIESGO
 
 El pipeline de base de datos funciona correctamente de extremo a extremo. El único riesgo detectado es que **el worker HTTP `/api/worker/v2-webhook-to-domain` no está disponible en el deployment de producción actual**, lo que impide la automatización de la conversión Webhook → Domain Event vía cron o trigger externo. La normalización debe hacerse actualmente de forma manual o local.
+
+---
+
+# NUEVA EJECUCIÓN: PRUEBA END-TO-END REAL (V2): Webhook → Worker → Domain → Engine → Score
+**Fecha:** 2026-03-03T09:45:58-03:00
+
+## PASO 1 — Elegir store_id real
+SQL Executed:
+```sql
+select store_id from v2_stores limit 1;
+```
+Result: 
+```json
+[{"store_id":"0485e5e6-5bc9-4e85-bdbe-e0c9ff20a0e2"}]
+```
+
+## PASO 2 — Insertar 1 webhook de prueba
+SQL Executed:
+```sql
+insert into public.v2_webhook_events (
+  store_id, topic, resource, received_at, raw_payload
+)
+values (
+  '0485e5e6-5bc9-4e85-bdbe-e0c9ff20a0e2',
+  'orders_v2',
+  '/orders/999-test',
+  now(),
+  jsonb_build_object('topic','orders_v2','resource','/orders/999-test','test',true)
+)
+returning event_id;
+```
+Error:
+```
+Failed to run sql query: ERROR:  23502: null value in column "provider_event_id" of relation "v2_webhook_events" violates not-null constraint
+DETAIL:  Failing row contains (40212d41-c054-45d6-8b5e-0ef9b82da0ca, 0485e5e6-5bc9-4e85-bdbe-e0c9ff20a0e2, null, orders_v2, /orders/999-test, null, {"test": true, "topic": "orders_v2", "resource": "/orders/999-te..., 2026-03-03 12:47:03.929746+00, null, null).
+```
+
+### Clasificación Final
+**RIESGO** - La prueba E2E falló en el PASO 2 debido a una violación de constraint (`provider_event_id` is null). La ejecución se detuvo según las reglas establecidas ("Si algo falla, detener y reportar evidencia"). No se pudieron ejecutar los PASOS 3, 4 y 5.
