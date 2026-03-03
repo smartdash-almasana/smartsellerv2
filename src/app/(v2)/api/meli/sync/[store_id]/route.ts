@@ -176,7 +176,7 @@ async function syncOrders(params: {
                     occurred_at: occurredAt,
                     normalized_at: fetchedAt,
                 },
-                { onConflict: 'source_event_id,event_type' }
+                { onConflict: 'source_event_id', ignoreDuplicates: true }
             );
 
         if (deErr) {

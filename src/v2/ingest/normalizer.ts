@@ -76,14 +76,17 @@ export async function normalizeWebhookEvent(eventId: string): Promise<Normalizer
     // ON CONFLICT (source_event_id, event_type) DO NOTHING returns [] with no error.
     const { data: inserted } = await supabaseAdmin
         .from('v2_domain_events')
-        .insert({
-            source_event_id: webhookEvent.event_id,
-            event_type,
-            entity_type,
-            entity_id,
-            occurred_at,
-            payload: rawPayload,
-        })
+        .upsert(
+            {
+                source_event_id: webhookEvent.event_id,
+                event_type,
+                entity_type,
+                entity_id,
+                occurred_at,
+                payload: rawPayload,
+            },
+            { onConflict: 'source_event_id', ignoreDuplicates: true }
+        )
         .select('domain_event_id')
         .throwOnError();
 
