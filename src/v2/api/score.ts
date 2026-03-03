@@ -331,11 +331,12 @@ async function createEngineRun(storeId: string): Promise<string> {
     return data.run_id;
 }
 
-async function finalizeEngineRun(runId: string, status: 'completed' | 'failed'): Promise<void> {
-    await supabaseAdmin
+async function finalizeEngineRun(runId: string, status: 'done' | 'failed'): Promise<void> {
+    const { error } = await supabaseAdmin
         .from('v2_engine_runs')
         .update({ status, finished_at: new Date().toISOString() })
         .eq('run_id', runId);
+    if (error) throw new Error(`[score-v0] engine_run finalize failed: ${error.message}`);
 }
 
 // ─── Main: getLatestScore ─────────────────────────────────────────────────────
@@ -397,10 +398,13 @@ export async function getLatestScore(storeId: string): Promise<ScoreResponse | n
         // 10. Persist score
         await persistScore(tenantId, storeId, runId, snapshotId, score, computedAt);
 
-        await finalizeEngineRun(runId, 'completed');
+        await finalizeEngineRun(runId, 'done');
         return { store_id: storeId, score, computed_at: computedAt, run_id: runId, snapshot_id: snapshotId };
     } catch (err) {
-        await finalizeEngineRun(runId, 'failed').catch(() => { });
+        await finalizeEngineRun(runId, 'failed').catch((finalizeErr) => {
+            const message = finalizeErr instanceof Error ? finalizeErr.message : String(finalizeErr);
+            console.error('[score-v0] finalize failed run update', message);
+        });
         throw err;
     }
 }
