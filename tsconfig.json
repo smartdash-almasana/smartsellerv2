@@ -42,6 +42,10 @@
   ],
   "exclude": [
     "node_modules",
-    "old/**/*"
+    "old/**/*",
+    "test_unlinked.ts",
+    "test_zero_price.ts",
+    "test_orchestrator.ts",
+    "run_worker_test.ts"
   ]
 }
