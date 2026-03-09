@@ -13,12 +13,23 @@ CREATE EXTENSION IF NOT EXISTS pg_net;
 
 ## 2. Cron Jobs Activos
 
-1. **Reprocesador Cola de Eventos Muertos (DLQ Reprocessor)**
+1. **Ingest Orchestrator (Flujo Normal)**
+   * **Nombre (`job_name`)**: `ingest_orchestrator_2m`
+   * **Schedule**: `*/2 * * * *` (Cada 2 Minutos)
+   * **Función que lo lanza**: `SELECT public.run_ingest_orchestrator();`
+   * **Dependencia**: Usa `net.http_get()` (extensión `pg_net`) para invocar el endpoint público en Vercel con API Key.
+   * **Destino Real**: `GET https://smartsellerv2.vercel.app/api/worker/v2-webhook-to-domain?limit=50`
+   * **Propósito**: Consumir continuamente nuevos `v2_webhook_events` y generar `v2_domain_events` en el camino normal.
+   * **Secret**: Autorizado usando payload `x-cron-secret` leído desde `current_setting('app.settings.cron_secret', true)` (sin hardcode en SQL versionado).
+   * **Idempotencia de Job**: la migración hace `unschedule` por `job_name` y luego `schedule` del mismo nombre para evitar duplicados.
+
+2. **Reprocesador Cola de Eventos Muertos (DLQ Reprocessor)**
    * **Nombre (`job_name`)**: `dlq_reprocessor_10m`
    * **Schedule**: `*/10 * * * *` (Cada 10 Minutos)
    * **Función que lo lanza**: `SELECT public.run_dlq_reprocessor();`
-   * **Dependencia**: Usa `net.http_get()` (extensión `pg_net`) para invocar el enpoint público en Vercel con API Key.
+   * **Dependencia**: Usa `net.http_get()` (extensión `pg_net`) para invocar el endpoint público en Vercel con API Key.
    * **Destino Real**: `GET https://smartsellerv2.vercel.app/api/worker/v2-webhook-to-domain?mode=dlq&limit=50`
+   * **Propósito**: Reintentar automáticamente eventos fallidos (DLQ) respetando cooldown y límites de intento definidos por el worker.
    * **Secret**: Autorizado usando payload `x-cron-secret` (se inyecta en la función PL/pgSQL; no expuesto en logs *por diseño*).
 
 ## 3. Comandos Útiles de Administración
