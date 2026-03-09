@@ -62,6 +62,16 @@ function extractEntityId(resource: string | null | undefined): string {
     return last && last.trim() !== '' ? last.trim() : resource;
 }
 
+const DLQ_THRESHOLD = 10;
+const BACKOFF_BASE_MS = 60_000;
+const BACKOFF_CAP_MS = 30 * 60_000;
+
+function computeBackoffMs(attempts: number): number {
+    const base = Math.min(BACKOFF_BASE_MS * Math.pow(2, attempts), BACKOFF_CAP_MS);
+    const jitter = base * 0.1 * (Math.random() * 2 - 1);
+    return Math.round(base + jitter);
+}
+
 const dbDeps: WorkerDeps = {
     async loadWebhookEvents(limit: number): Promise<WebhookEventInput[]> {
         const candidateLimit = Math.min(Math.max(limit * 4, limit), 2000);
@@ -267,7 +277,165 @@ export async function runV2WebhookToDomainWorkerWithDeps(
 }
 
 export async function runV2WebhookToDomainWorker(limit = 50): Promise<WorkerRunResult> {
-    return runV2WebhookToDomainWorkerWithDeps(dbDeps, limit);
+    const workerId = `${process.env.VERCEL_REGION ?? 'local'}:${crypto.randomUUID()}`;
+    const nowIso = new Date().toISOString();
+
+    const { count: claimableCount } = await supabaseAdmin
+        .from('v2_webhook_ingest_jobs')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['pending', 'failed'])
+        .or(`next_eligible_at.is.null,next_eligible_at.lte.${nowIso}`);
+
+    let inserted = 0;
+    let deduped = 0;
+    let failed = 0;
+    let deadLetter = 0;
+    let claimed = 0;
+    let enqueued = 0;
+
+    const { error: enqueueErr } = await supabaseAdmin.rpc('v2_enqueue_webhook_ingest_jobs' as never);
+    if (!enqueueErr) enqueued = claimableCount ?? 0;
+
+    const { data: jobs, error: claimErr } = await supabaseAdmin
+        .rpc('v2_claim_webhook_ingest_jobs', { p_limit: limit, p_worker: workerId });
+    if (claimErr) throw new Error(`[v2-worker] claim failed: ${claimErr.message}`);
+
+    const claimedJobs = (jobs ?? []) as Array<{ event_id: string; attempts: number }>;
+    claimed = claimedJobs.length;
+
+    const claimedIds = claimedJobs.map((j) => j.event_id);
+    const attemptsByEventId = new Map(claimedJobs.map((j) => [j.event_id, j.attempts ?? 0]));
+
+    const { data: eventRows } = claimedIds.length > 0
+        ? await supabaseAdmin
+            .from('v2_webhook_events')
+            .select('event_id, store_id, tenant_id, topic, resource, received_at, raw_payload')
+            .in('event_id', claimedIds)
+        : { data: [] };
+
+    const eventMap = new Map(((eventRows ?? []) as WebhookEventInput[]).map((e) => [e.event_id, e]));
+
+    for (const eventId of claimedIds) {
+        const row = eventMap.get(eventId);
+        const attempts = attemptsByEventId.get(eventId) ?? 0;
+        const nextAttempts = attempts + 1;
+
+        if (!row) {
+            await supabaseAdmin
+                .from('v2_webhook_ingest_jobs')
+                .update({ status: 'done', locked_at: null, locked_by: null, updated_at: new Date().toISOString() })
+                .eq('event_id', eventId);
+            continue;
+        }
+
+        const mapped = mapTopic(row.topic);
+
+        try {
+            const created = await dbDeps.insertDomainEvent({
+                source_event_id: row.event_id,
+                store_id: row.store_id,
+                tenant_id: row.tenant_id ?? null,
+                event_type: mapped.event_type,
+                entity_type: mapped.entity_type,
+                entity_id: extractEntityId(row.resource ?? null),
+                occurred_at: row.received_at,
+                payload: (row.raw_payload as JsonMap | null) ?? null,
+            });
+
+            if (created) inserted += 1;
+            else deduped += 1;
+
+            await supabaseAdmin
+                .from('v2_webhook_ingest_jobs')
+                .update({
+                    status: 'done',
+                    attempts: 0,
+                    last_error: null,
+                    locked_at: null,
+                    locked_by: null,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('event_id', eventId);
+
+            await logIngestAttempt({
+                event_id: row.event_id,
+                store_id: row.store_id,
+                worker: 'v2-webhook-to-domain',
+                status: created ? 'ok' : 'skipped',
+            });
+        } catch (error: any) {
+            const msg = error?.message ?? String(error);
+
+            if (nextAttempts >= DLQ_THRESHOLD) {
+                await supabaseAdmin
+                    .from('v2_webhook_ingest_jobs')
+                    .update({
+                        status: 'dead_letter',
+                        attempts: nextAttempts,
+                        last_error: msg,
+                        locked_at: null,
+                        locked_by: null,
+                        dead_letter_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('event_id', eventId);
+                deadLetter += 1;
+            } else {
+                await supabaseAdmin
+                    .from('v2_webhook_ingest_jobs')
+                    .update({
+                        status: 'failed',
+                        attempts: nextAttempts,
+                        last_error: msg,
+                        locked_at: null,
+                        locked_by: null,
+                        next_eligible_at: new Date(Date.now() + computeBackoffMs(nextAttempts)).toISOString(),
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('event_id', eventId);
+                failed += 1;
+            }
+
+            await logIngestAttempt({
+                event_id: row.event_id,
+                store_id: row.store_id,
+                worker: 'v2-webhook-to-domain',
+                status: 'error',
+                error_message: msg,
+                error_detail: { stack: error?.stack },
+            });
+        }
+    }
+
+    try {
+        await supabaseAdmin
+            .from('v2_worker_heartbeats')
+            .upsert({
+                worker_name: 'v2-webhook-to-domain',
+                worker_instance: workerId,
+                last_seen_at: new Date().toISOString(),
+                meta: {
+                    scanned: claimableCount ?? 0,
+                    enqueued,
+                    claimed,
+                    inserted,
+                    deduped,
+                    failed,
+                    dead_letter: deadLetter,
+                },
+            }, { onConflict: 'worker_name,worker_instance' });
+    } catch {
+        // best effort
+    }
+
+    return {
+        scanned: claimableCount ?? 0,
+        inserted,
+        deduped,
+        retried: 0,
+        skipped: 0,
+        errors: failed + deadLetter,
+    };
 }
 
 // ── DLQ mode ──────────────────────────────────────────────────────────────────
