@@ -211,6 +211,12 @@ export async function runV2WebhookToDomainWorkerWithDeps(
     limit = 50
 ): Promise<WorkerRunResult> {
     const rows = await deps.loadWebhookEvents(limit);
+    const nowIso = new Date().toISOString();
+    const { count: claimableCount } = await supabaseAdmin
+        .from('v2_webhook_ingest_jobs')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['pending', 'failed'])
+        .or(`next_eligible_at.is.null,next_eligible_at.lte.${nowIso}`);
     let inserted = 0;
     let deduped = 0;
 
@@ -251,7 +257,7 @@ export async function runV2WebhookToDomainWorkerWithDeps(
     }
 
     return {
-        scanned: rows.length,
+        scanned: Math.max(rows.length, claimableCount ?? 0),
         inserted,
         deduped,
         retried: 0,
