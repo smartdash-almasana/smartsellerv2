@@ -88,7 +88,7 @@ El core clínico queda **cerrado y operativo** para el alcance V2 auditado.
 ## Reconciliación Operativa (auditada 2026-03-10)
 
 ### Dictamen operativo: `FIXED / OPERATIONAL`  
-### Dictamen consistencia: `PARTIAL`
+### Dictamen consistencia: `READY FOR OPERATIONAL VALIDATION`
 
 | Componente | Estado real |
 |---|---|
@@ -99,13 +99,13 @@ El core clínico queda **cerrado y operativo** para el alcance V2 auditado.
 | Cron/schedule `meli_reconcile_6h` | ✅ `0 */6 * * *` activo en pg_cron |
 | Heartbeats worker | ✅ `processed=6, failed=0` |
 | `order.reconciled` en `v2_domain_events` | ✅ 6 eventos reales de ML (ARS, 2025–2026) |
-| `order.reconciled` propaga a `v2_orders` | ❌ NO en runtime — causa raíz FOUND (ver G en RECONCILIATION_AUDIT.md) |
-| `order.reconciled` visible para motor clínico | ❌ NO — bloqueado por 2 cortes confirmados (deploy ERROR + early return idempotencia) |
+| `order.reconciled` propaga a `v2_orders` | ✅ Fix A+B implementados en `meli-reconcile/route.ts` |
+| `order.reconciled` visible para motor clínico | ✅ En código (pendiente validación operativa post-deploy) |
 | Entidades cubiertas por worker | ⚠️ Solo `orders` — payments/refunds/fulfillments sin implementar |
 
 ### Próximo paso mínimo
-Dos fixes secuenciales (ver `RECONCILIATION_AUDIT.md § G`):
-1. **Fix A** — cambiar import a path relativo en `meli-reconcile/route.ts` para que el deploy Vercel compile (`@v2/typed-writer/orders-writer` → path relativo)
-2. **Fix B** — eliminar el early return `if (!whRow) return false` para que re-runs idempotentes igualmente invoquen el typed writer sobre domain_events existentes
+Validación operativa post-deploy del flujo ya corregido:
+1. `order.reconciled` materializa en `v2_orders`
+2. huérfanas reconciliadas = 0
 
 Ver detalles completos en `docs/architecture/RECONCILIATION_AUDIT.md`.
