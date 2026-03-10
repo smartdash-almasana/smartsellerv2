@@ -36,7 +36,7 @@ Fecha de corte: 2026-03-09
 |-----------------------------------|-------------------------------|-----------------------------------------|
 | webhook_events → domain_events    | OK                            | OK (verificado en sesión E2E 2026-03-03)|
 | domain_events → snapshots         | FIXED IN CODE                 | **FIXED** (Operativo verificado)        |
-| snapshots → metrics_daily         | (auditado 2026-03-09)         | **FIXED** (Lectura validada operativamente desde snapshot genérico en pipeline) |
+| snapshots → metrics_daily         | (auditado 2026-03-10)         | **PARTIAL** (Lectura validada pero inserción pisada por Request Memoization de Next.js. Bug en json merge) |
 | metrics_daily → clinical_signals  | OK                            | OK                                      |
 | clinical_signals → health_scores  | OK                            | OK                                      |
 
@@ -73,7 +73,7 @@ Fix validado operativamente:
 |---|---|
 | `webhook_events → domain_events` | `OK` |
 | `domain_events → snapshots` | `FIXED` |
-| `snapshots → metrics_daily` | `FIXED` |
+| `snapshots → metrics_daily` | `PARTIAL` |
 | `metrics_daily → clinical_signals` | `OK` |
 | `clinical_signals → health_scores` | `OK` |
 
