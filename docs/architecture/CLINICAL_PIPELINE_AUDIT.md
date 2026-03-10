@@ -72,7 +72,7 @@ Con este hito cardinal, el orquestador valida la persistencia y conectividad del
 
 ### Tramo 2 — `v2_snapshots → v2_metrics_daily`
 
-**Dictamen: `PARTIAL`**  (Identificado BLOQUEO: Request Memoization Cache en Next.js)
+**Dictamen: `FIXED`** (Validado mediante RPC Atómica `v2_upsert_metrics_daily_merge`)
 
 #### Qué se validó operativamente
 Se verificó que los sub-workers clínicos ya no leen las tablas vivas (bypass), sino que dependen de `payload.clinical_inputs` materializado en `v2_snapshots` durante el inicio del orquestador, consumiendo el input en tiempo de imagen inmutable (fase "seed").
@@ -89,7 +89,10 @@ Al revisar la DB en base a la ejecución generada recientemente (`088555ea-1d9b-
 1. Snapshot `5a9304bb-77c4-4b78-85b5-4eab817d287f` incluye la metadata inicial json: `{"clinical_inputs": {"refunds_count_1d": 0, "payments_unlinked_1d": 0, ...}}`.
 2. Las subsecuencias que nutren `v2_metrics_daily` utilizaron la abstracción `readSnapshotClinicalInputs`, reflejándose consecuentemente en `metrics_daily` referenciada por fecha y seller y consolidando el json: `[{"metrics":{"refunds_count_1d":0,"zero_price_items_1d":0,"payments_unlinked_1d":0}}]`.
 
-*(Actualización 2026-03-10): Revalidación operativa arroja un BUG CRÍTICO de "Request Memoization". La validación SQL contra producción expone que solo perdura `{zero_price_items_1d: 0}` en el JSON de las ejecuciones, ignorando a `refunds` y `payments`. Causa:** Durante la misma Request en Next.js Productivo, los múltiples sub-workers hacen un `SELECT` GET para leer y mergear el JSON, pero Next.js intercepta este GET y sirve `null` desde su memo cache de manera agresiva a lo largo de los subsiguientes workers concurrentes/awaiting, anulando el merge. Falla la acumulación del JSONB consolida.*
+*(Actualización 2026-03-10): Revalidación operativa arroja un BUG CRÍTICO de "Request Memoization". La validación SQL contra producción expone que solo perdura `{zero_price_items_1d: 0}` en el JSON de las ejecuciones, ignorando a `refunds` y `payments`.
+
+**Fix Aplicado y Validado (2026-03-10):** Se reemplazó el patrón read->merge->upsert en el backend por la función RPC `public.v2_upsert_metrics_daily_merge`. Esta función realiza el merge del JSONB directamente en el engine de Postgres (`metrics || p_metrics_patch`), eliminando la dependencia de la lectura memoizada de Next.js.
+**Evidencia SQL post-fix (date='2026-03-09'):** `metrics: {"refunds_count_1d": 0, "zero_price_items_1d": 0, "payments_unlinked_1d": 0}` (3/3 keys persistidas).*
 
 ---
 
@@ -115,7 +118,7 @@ Inserto atómico de scores sobre penalizaciones.
 |----------------------------------------|-------------------------------|-----------------------------------------|
 | webhook_events → domain_events         | OK                            | `v2-webhook-to-domain`                  |
 | domain_events → snapshots              | **FIXED**                     | `run-daily-clinical-v0.ts` + worker route |
-| snapshots → metrics_daily              | **PARTIAL**                     | snapshot payload inputs → sub-workers   |
+| snapshots → metrics_daily              | **FIXED**                     | snapshot payload inputs → sub-workers   |
 | metrics_daily → clinical_signals       | OK                            | sub-workers (refunds, payments, zero)   |
 | clinical_signals → health_scores       | OK                            | sub-workers                             |
 
@@ -128,7 +131,7 @@ Inserto atómico de scores sobre penalizaciones.
 |---|---|
 | `v2_webhook_events → v2_domain_events` | `OK` |
 | `v2_domain_events → v2_snapshots` | `FIXED` |
-| `v2_snapshots → v2_metrics_daily` | `PARTIAL` |
+| `v2_snapshots → v2_metrics_daily` | `FIXED` |
 | `v2_metrics_daily → v2_clinical_signals` | `OK` |
 | `v2_clinical_signals → v2_health_scores` | `OK` |
 
