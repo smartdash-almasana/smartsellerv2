@@ -81,7 +81,6 @@ async function upsertDomainEvent(
 ): Promise<boolean> {
     const fetchedAt = new Date().toISOString();
     const providerEventId = `reconcile:orders:${order.id}:${order.date_last_updated || fetchedAt}`;
-    const dedupeKey = providerEventId;
 
     const { data: whRow, error: whErr } = await supabaseAdmin
         .from('v2_webhook_events')
@@ -90,13 +89,12 @@ async function upsertDomainEvent(
                 store_id: storeId,
                 tenant_id: tenantId,
                 provider_event_id: providerEventId,
-                dedupe_key: dedupeKey,
                 topic: 'orders_v2',
                 resource: `/orders/${order.id}`,
                 raw_payload: { order, fetched_at: fetchedAt, kind: 'reconcile' },
                 received_at: fetchedAt,
             },
-            { onConflict: 'store_id,dedupe_key' }
+            { onConflict: 'store_id,provider_event_id' }
         )
         .select('event_id')
         .maybeSingle<{ event_id: string }>();
