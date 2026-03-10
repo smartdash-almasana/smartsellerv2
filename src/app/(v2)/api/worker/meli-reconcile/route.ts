@@ -75,6 +75,7 @@ async function fetchOrdersPage(
 
 // ─── Domain event upsert ──────────────────────────────────────────────────────
 async function upsertDomainEvent(
+    tenantId: string,
     storeId: string,
     order: MeliOrder
 ): Promise<boolean> {
@@ -93,6 +94,7 @@ async function upsertDomainEvent(
         .upsert(
             {
                 source_event_id: sourceEventId,
+                tenant_id: tenantId,
                 store_id: storeId,
                 event_type: 'order.reconciled',
                 entity_type: 'order',
@@ -109,14 +111,17 @@ async function upsertDomainEvent(
     return Boolean(data);
 }
 
-// ─── Get ML seller_id for store ───────────────────────────────────────────────
-async function getMeliSellerId(storeId: string): Promise<string | null> {
+// ─── Get store context ───────────────────────────────────────────────
+async function getStoreContext(storeId: string): Promise<{ sellerId: string | null; tenantId: string | null }> {
     const { data } = await supabaseAdmin
         .from('v2_stores')
-        .select('external_account_id')
+        .select('external_account_id, tenant_id')
         .eq('store_id', storeId)
-        .maybeSingle<{ external_account_id: string | null }>();
-    return data?.external_account_id ?? null;
+        .maybeSingle<{ external_account_id: string | null; tenant_id: string | null }>();
+    return {
+        sellerId: data?.external_account_id ?? null,
+        tenantId: data?.tenant_id ?? null
+    };
 }
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
@@ -219,9 +224,10 @@ async function run(request: NextRequest, limit: number, scope: string): Promise<
                 // 1) Get valid ML access token (handles refresh internally)
                 const accessToken = await getValidToken(job.store_id);
 
-                // 2) Get ML seller ID for this store
-                const sellerId = await getMeliSellerId(job.store_id);
+                // 2) Get store context
+                const { sellerId, tenantId } = await getStoreContext(job.store_id);
                 if (!sellerId) throw new Error(`[meli-reconcile] No external_account_id for store ${job.store_id}`);
+                if (!tenantId) throw new Error(`[meli-reconcile] No tenant_id for store ${job.store_id}`);
 
                 // 3) Determine start offset from cursor
                 let offset = job.cursor?.offset ?? 0;
@@ -233,7 +239,7 @@ async function run(request: NextRequest, limit: number, scope: string): Promise<
                     const results = pageData.results ?? [];
 
                     for (const order of results) {
-                        await upsertDomainEvent(job.store_id, order);
+                        await upsertDomainEvent(tenantId, job.store_id, order);
                         totalProcessed += 1;
                     }
 
