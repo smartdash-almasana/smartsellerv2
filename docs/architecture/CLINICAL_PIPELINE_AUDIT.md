@@ -114,7 +114,7 @@ El **core clínico SmartSeller V2 queda cerrado** en su cadena canónica (`domai
 - Corrección de overwrite secuencial: merge determinístico de JSON en `v2_metrics_daily.metrics`.
 
 ### Frentes siguientes (fuera del core clínico)
-1. **Reconciliación** — auditada `2026-03-10`, ver `RECONCILIATION_AUDIT.md`. Estado: **FIXED / OPERATIONAL** (RPC enqueue + run function + cron 6h implementados; pendiente primera evidencia operativa).
+1. **Reconciliación** — auditada `2026-03-10`, ver `RECONCILIATION_AUDIT.md`. Estado: **PARTIAL** (validación runtime ejecutada: reconcile procesa (`claimed=1`,`processed=6`) pero `order.reconciled` aún no materializa en `v2_orders`).
 2. Observabilidad/QA: consolidar checks automáticos de punta a punta por tramo.
 3. Hardening de workers: timeouts, retry policy y controles de concurrencia por worker.
 
@@ -122,7 +122,7 @@ El **core clínico SmartSeller V2 queda cerrado** en su cadena canónica (`domai
 
 ## Reconciliación Operativa — Tramo adicional (auditado 2026-03-10)
 
-**Dictamen: `FIXED / OPERATIONAL`**
+**Dictamen: `PARTIAL`**
 
 | Componente | Estado |
 |---|---|
@@ -132,6 +132,7 @@ El **core clínico SmartSeller V2 queda cerrado** en su cadena canónica (`domai
 | RPC `v2_enqueue_reconciliation_jobs` | ✅ Implementada en migración `20260310_v2_reconciliation_cron.sql` |
 | Cron / schedule | ✅ `meli_reconcile_6h` (`0 */6 * * *`) en pg_cron |
 | Ejecuciones reales | ❌ **0 ejecuciones** (0 heartbeats, 0 domain_events `order.reconciled`) |
+| Propagación `order.reconciled -> v2_orders` | ❌ No validada en runtime (match en `v2_orders` = 0) |
 | Entidades cubiertas | ⚠️ Solo `orders` — payments/refunds/fulfillments ausentes |
 
 Ver evidencia completa en [`docs/architecture/RECONCILIATION_AUDIT.md`](./RECONCILIATION_AUDIT.md).
