@@ -87,20 +87,24 @@ El core clínico queda **cerrado y operativo** para el alcance V2 auditado.
 
 ## Reconciliación Operativa (auditada 2026-03-10)
 
-### Dictamen: `FIXED / OPERATIONAL`
+### Dictamen operativo: `FIXED / OPERATIONAL`  
+### Dictamen consistencia: `PARTIAL — STRUCTURAL GAP`
 
 | Componente | Estado real |
 |---|---|
 | Worker `meli-reconcile` | ✅ Implementado (idempotencia, cursor, backoff, DLQ, heartbeat, SKIP LOCKED) |
-| Tabla `v2_reconciliation_jobs` | ✅ 0 rows — nunca usada |
-| `v2_claim_reconciliation_jobs` RPC | ✅ Existe |
-| `v2_enqueue_reconciliation_jobs` RPC | ✅ Implementada en migración `20260310_v2_reconciliation_cron.sql` |
-| Cron/schedule para `meli-reconcile` | ✅ `meli_reconcile_6h` (`0 */6 * * *`) en migración `20260310_v2_reconciliation_cron.sql` |
-| Ejecuciones históricas | ❌ **0** (heartbeats = 0, domain_events `order.reconciled` = 0) |
+| Tabla `v2_reconciliation_jobs` | ✅ 1 row — `status = done` — post-primera-ejecución |
+| `v2_claim_reconciliation_jobs` RPC | ✅ Existe y funciona |
+| `v2_enqueue_reconciliation_jobs` RPC | ✅ Implementada en `20260310_v2_reconciliation_cron.sql` |
+| Cron/schedule `meli_reconcile_6h` | ✅ `0 */6 * * *` activo en pg_cron |
+| Heartbeats worker | ✅ `processed=6, failed=0` |
+| `order.reconciled` en `v2_domain_events` | ✅ 6 eventos reales de ML (ARS, 2025–2026) |
+| `order.reconciled` propaga a `v2_orders` | ❌ NO — typed writer ignora este event_type |
+| `order.reconciled` visible para motor clínico | ❌ NO — scores y señales no los consumen |
 | Entidades cubiertas por worker | ⚠️ Solo `orders` — payments/refunds/fulfillments sin implementar |
 
 ### Próximo paso mínimo
-Validar primera ejecución operativa post-activación:
-1. `v2_reconciliation_jobs` con filas en `done`/`pending` según cursor
-2. `v2_worker_heartbeats` con `worker_name = 'meli-reconcile'`
-3. `v2_domain_events` con eventos `order.reconciled`
+Extender el typed writer `orders-writer.ts` para aceptar `event_type = 'order.reconciled'` (además de `order.updated`).
+Sin este fix, la reconciliación operativa **no genera valor clínico**: scores y señales no ven las órdenes reales de ML.
+
+Ver detalles completos en `docs/architecture/RECONCILIATION_AUDIT.md`.
