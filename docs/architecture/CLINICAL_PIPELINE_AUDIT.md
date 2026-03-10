@@ -7,6 +7,34 @@
 
 ---
 
+## Addendum focalizado — Tramo 1 (`v2_domain_events → v2_snapshots`) (2026-03-10)
+
+**Alcance:** solo revalidación del tramo 1 solicitada (sin reauditoría general).
+
+**Resultado de código (repo):**
+- El orquestador activo `runDailyClinicalV0` **sí materializa snapshots**:
+  - Seed temprano: `seedSnapshotClinicalInputs` crea/actualiza snapshot por `run_id` ([run-daily-clinical-v0.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/run-daily-clinical-v0.ts:219), [snapshot-clinical-inputs.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/snapshot-clinical-inputs.ts:142)).
+  - Cierre de corrida: `ensureSnapshotForRun` crea si falta o mergea payload si existe ([run-daily-clinical-v0.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/run-daily-clinical-v0.ts:84), [run-daily-clinical-v0.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/run-daily-clinical-v0.ts:237)).
+  - Link explícito de `snapshot_id` hacia `v2_clinical_signals` y `v2_health_scores` ([run-daily-clinical-v0.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/run-daily-clinical-v0.ts:124)).
+- Writer alterno vigente: score endpoint (`getLatestScore`) también inserta en `v2_snapshots` ([score.ts](/e:/BuenosPasos/smartseller-v2/src/v2/api/score.ts:272), [route.ts](/e:/BuenosPasos/smartseller-v2/src/app/(v2)/api/score/[store_id]/route.ts:14)).
+
+**Validación SQL operativa (estado actual de acceso):**
+- Intentos ejecutados vía MCP Supabase sobre:
+  - `select count(*)::int as snapshots_total, max(snapshot_at) as last_snapshot_at from public.v2_snapshots;`
+  - `select snapshot_id, tenant_id, store_id, run_id, snapshot_at from public.v2_snapshots order by snapshot_at desc nulls last limit 10;`
+  - join `v2_snapshots` ↔ `v2_engine_runs` (últimos 14 días).
+- Resultado real en esta sesión: **`Forbidden resource`** en `execute_sql` y `list_tables` (no se pudo leer datos de tablas).
+
+**Dictamen operativo de este addendum:** `PARTIAL`
+- `FIXED` en lógica de escritura (repo) para el orquestador activo.
+- Evidencia de poblamiento/traceo en DB **no revalidada en esta sesión** por bloqueo de permisos.
+
+**Fix mínimo recomendado (solo para cerrar evidencia faltante):**
+1. Restaurar permiso de lectura SQL (`SELECT`) sobre `public.v2_snapshots`, `public.v2_engine_runs`, `public.v2_domain_events` para el conector MCP.
+2. Re-ejecutar las 3 queries de arriba y registrar conteo/frescura + cobertura de join por `run_id`.
+
+---
+
 ## Pipeline canónico
 
 ```
@@ -114,7 +142,7 @@ El **core clínico SmartSeller V2 queda cerrado** en su cadena canónica (`domai
 - Corrección de overwrite secuencial: merge determinístico de JSON en `v2_metrics_daily.metrics`.
 
 ### Frentes siguientes (fuera del core clínico)
-1. **Reconciliación** — auditada `2026-03-10`, ver `RECONCILIATION_AUDIT.md`. Estado: **PARTIAL** (validación runtime ejecutada: reconcile procesa (`claimed=1`,`processed=6`) pero `order.reconciled` aún no materializa en `v2_orders`).
+1. **Reconciliación** — auditada `2026-03-10`, ver `RECONCILIATION_AUDIT.md`. Estado: **READY FOR OPERATIONAL VALIDATION** (Fix A+B implementados en `meli-reconcile/route.ts`; pendiente validación runtime post-deploy).
 2. Observabilidad/QA: consolidar checks automáticos de punta a punta por tramo.
 3. Hardening de workers: timeouts, retry policy y controles de concurrencia por worker.
 
@@ -122,7 +150,7 @@ El **core clínico SmartSeller V2 queda cerrado** en su cadena canónica (`domai
 
 ## Reconciliación Operativa — Tramo adicional (auditado 2026-03-10)
 
-**Dictamen: `PARTIAL`**
+**Dictamen: `READY FOR OPERATIONAL VALIDATION`**
 
 | Componente | Estado |
 |---|---|
@@ -132,7 +160,7 @@ El **core clínico SmartSeller V2 queda cerrado** en su cadena canónica (`domai
 | RPC `v2_enqueue_reconciliation_jobs` | ✅ Implementada en migración `20260310_v2_reconciliation_cron.sql` |
 | Cron / schedule | ✅ `meli_reconcile_6h` (`0 */6 * * *`) en pg_cron |
 | Ejecuciones reales | ❌ **0 ejecuciones** (0 heartbeats, 0 domain_events `order.reconciled`) |
-| Propagación `order.reconciled -> v2_orders` | ❌ No validada en runtime (match en `v2_orders` = 0) |
+| Propagación `order.reconciled -> v2_orders` | ✅ En código (Fix A+B aplicados) |
 | Entidades cubiertas | ⚠️ Solo `orders` — payments/refunds/fulfillments ausentes |
 
 Ver evidencia completa en [`docs/architecture/RECONCILIATION_AUDIT.md`](./RECONCILIATION_AUDIT.md).

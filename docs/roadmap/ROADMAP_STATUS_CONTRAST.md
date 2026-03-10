@@ -2,6 +2,14 @@
 
 Fecha de corte: 2026-03-09
 
+## Addendum focalizado (2026-03-10) — Tramo `v2_domain_events -> v2_snapshots`
+
+- Revalidación puntual en repo confirma que el orquestador activo `runDailyClinicalV0` crea/actualiza snapshot en seed y también al cierre de corrida ([run-daily-clinical-v0.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/run-daily-clinical-v0.ts:219), [run-daily-clinical-v0.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/run-daily-clinical-v0.ts:237)).
+- Existe writer alterno en `GET /api/score/[store_id]` vía `createSnapshot` en `src/v2/api/score.ts` ([score.ts](/e:/BuenosPasos/smartseller-v2/src/v2/api/score.ts:272), [route.ts](/e:/BuenosPasos/smartseller-v2/src/app/(v2)/api/score/[store_id]/route.ts:14)).
+- SQL operativo intentado en esta sesión para conteo/frescura/join de snapshots devolvió `Forbidden resource` (MCP sin permisos de lectura de tablas), por lo que no se revalidó poblamiento real en DB.
+
+**Dictamen de este addendum:** `PARTIAL` (flujo en código `FIXED`, evidencia SQL runtime bloqueada por permisos).
+
 ## Qué se auditó
 - Estado DB refactor y gates QA asociados.
 - Estado typed writer y materialización de entidades V1.
