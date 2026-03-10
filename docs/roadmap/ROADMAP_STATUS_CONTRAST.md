@@ -10,6 +10,16 @@ Fecha de corte: 2026-03-09
 
 **Dictamen de este addendum:** `FIXED` (Validación SQL runtime exitosa para snapshots y métricas atómicas).
 
+## Addendum focalizado (2026-03-10) — Tramo `v2_metrics_daily -> v2_clinical_signals`
+
+- El orquestador activo ejecuta workers clínicos secuenciales y cada worker deriva señal desde métricas/snapshot en el mismo `run_id`.
+- SQL operativo (read-only) confirma existencia de `v2_clinical_signals` (`18` filas; última señal `2026-03-03 23:33:32.789+00`) y trazabilidad por `run_id/store_id`.
+- Cobertura de identidad en 14 días: `run_id=18/18`, `store_id=18/18`, `tenant_id=15/18`, `snapshot_id=11/18`.
+- Las señales del set clínico activo (`refund_spike_24h`, `zero_price_items_24h`) llegan con `severity` y `evidence` coherente con `metric_date`.
+- El esquema real no usa `code/type`; contrato efectivo: `signal_key`, `severity`, `evidence`.
+
+**Dictamen de este addendum:** `FIXED` (Trazabilidad operativa validada. 0 señales generadas con tenant_id o snapshot_id nulos en las últimas 24h).
+
 ## Qué se auditó
 - Estado DB refactor y gates QA asociados.
 - Estado typed writer y materialización de entidades V1.

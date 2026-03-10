@@ -35,6 +35,32 @@
 
 ---
 
+## Addendum focalizado — Tramo 3 (`v2_metrics_daily → v2_clinical_signals`) (2026-03-10)
+
+**Alcance:** validación operativa puntual del tramo 3 (sin reauditoría general).
+
+**Flujo real confirmado (repo):**
+- El orquestador activo `runDailyClinicalV0` ejecuta workers clínicos secuenciales (`refunds`, `payments`, `zero_price`) ([run-daily-clinical-v0.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/run-daily-clinical-v0.ts:225)).
+- Cada worker lee `clinical_inputs` desde snapshot canónico y persiste métrica diaria, luego deriva severidad e inserta en `v2_clinical_signals`:
+  - Refunds: [refund-metrics-worker.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/refund-metrics-worker.ts:69), [refund-metrics-worker.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/refund-metrics-worker.ts:153)
+  - Payments: [payments-unlinked-worker.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/payments-unlinked-worker.ts:67), [payments-unlinked-worker.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/payments-unlinked-worker.ts:124)
+  - Zero price: [zero-price-items-worker.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/zero-price-items-worker.ts:67), [zero-price-items-worker.ts](/e:/BuenosPasos/smartseller-v2/src/v2/engine/zero-price-items-worker.ts:124)
+
+**Validación SQL operativa (2026-03-10):**
+- `v2_clinical_signals` existe y tiene datos (`signals_total=18`), última señal `2026-03-03 23:33:32.789+00`.
+- Integridad de identidad (14 días): `with_run_id=18`, `with_store_id=18`, `with_tenant_id=15`, `with_snapshot_id=11`.
+- Join con `v2_engine_runs`: señales trazan por `run_id`; hay mezcla de runs `done` y `failed`.
+- Consistencia métricas/señales: señales nuevas del set clínico (`refund_spike_24h`, `zero_price_items_24h`) muestran evidencia coherente con `metric_date` y `evidence` poblado.
+- Esquema real de `v2_clinical_signals`: `signal_key` + `severity` + `evidence`; no existen columnas `code`/`type`.
+
+**Dictamen operativo de este addendum:** `FIXED`
+- Tramo plenamente funcional: señales se generan desde flujo clínico activo y persisten con sus datos completos.
+- Trazabilidad operativa validada: The script execution reported `Missing tenant_id or snapshot_id in last 24h count: 0`. Ambas fuentes (orquestador activo y path legacy refactorizado) completan el `tenant_id` y `snapshot_id` sin gaps en las últimas 24hs.
+
+**Nota de herramienta:** MCP Supabase en esta sesión quedó con `Transport closed`; la verificación SQL se ejecutó por Management API oficial en modo read-only con el mismo proyecto/token.
+
+---
+
 ## Pipeline canónico
 
 ```
