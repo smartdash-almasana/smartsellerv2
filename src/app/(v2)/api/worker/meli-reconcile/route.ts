@@ -79,27 +79,42 @@ async function upsertDomainEvent(
     storeId: string,
     order: MeliOrder
 ): Promise<boolean> {
-    const rawSourceId = `reconcile:orders:${storeId}:${order.id}:${order.date_last_updated}`;
-    const hash = crypto.createHash('sha1').update(rawSourceId).digest('hex');
-    const sourceEventId = [
-        hash.substring(0, 8),
-        hash.substring(8, 12),
-        '5' + hash.substring(13, 16),
-        (parseInt(hash.substring(16, 17), 16) & 0x3 | 0x8).toString(16) + hash.substring(17, 20),
-        hash.substring(20, 32)
-    ].join('-');
+    const fetchedAt = new Date().toISOString();
+    const providerEventId = `reconcile:orders:${order.id}:${order.date_last_updated || fetchedAt}`;
+    const dedupeKey = providerEventId;
+
+    const { data: whRow, error: whErr } = await supabaseAdmin
+        .from('v2_webhook_events')
+        .upsert(
+            {
+                store_id: storeId,
+                tenant_id: tenantId,
+                provider_event_id: providerEventId,
+                dedupe_key: dedupeKey,
+                topic: 'orders_v2',
+                resource: `/orders/${order.id}`,
+                raw_payload: { order, fetched_at: fetchedAt, kind: 'reconcile' },
+                received_at: fetchedAt,
+            },
+            { onConflict: 'store_id,dedupe_key' }
+        )
+        .select('event_id')
+        .maybeSingle<{ event_id: string }>();
+
+    if (whErr) throw new Error(`[meli-reconcile] upsert webhook event failed: ${whErr.message}`);
+    if (!whRow) return false; // Already existed
 
     const { data, error } = await supabaseAdmin
         .from('v2_domain_events')
         .upsert(
             {
-                source_event_id: sourceEventId,
+                source_event_id: whRow.event_id,
                 tenant_id: tenantId,
                 store_id: storeId,
                 event_type: 'order.reconciled',
                 entity_type: 'order',
                 entity_id: String(order.id),
-                occurred_at: order.date_last_updated,
+                occurred_at: order.date_last_updated || fetchedAt,
                 payload: order as Record<string, unknown>,
             },
             { onConflict: 'source_event_id', ignoreDuplicates: true }
