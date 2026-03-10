@@ -111,6 +111,31 @@ El core clínico queda **cerrado y operativo** para el alcance V2 auditado.
 
 ---
 
+## Apertura formal de V3 (2026-03-10)
+
+Con el core clínico V2 plenamente validado operativamente en todos sus tramos, se formaliza la decisión arquitectónica de apertura de V3 canónica en paralelo.
+
+**ADR:** [`docs/adr/ADR-0009-v3-canonical-rebuild-strategy.md`](../adr/ADR-0009-v3-canonical-rebuild-strategy.md)  
+**Status:** Accepted
+
+### Resumen de la decisión
+- **V2:** queda en modo **estabilización operativa estricta**. Solo correcciones críticas, hardening de reconciliación y documentación. Sin expansión estructural.
+- **V3:** se abre como **core canónico paralelo**, construido desde primeros principios con: un writer por etapa, multi-tenant safety, determinismo, idempotencia, trazabilidad de snapshot a score, y adapters de proveedor separados del core.
+- **Migración:** progresiva por tramo (7 etapas gate-driven). Sin big-bang cutover.
+
+### Estado de los tramos V2 al cierre
+| Tramo | Estado validado |
+|---|---|
+| `webhook_events → domain_events` | `OK` |
+| `domain_events → snapshots` | `FIXED` |
+| `snapshots → metrics_daily` | `FIXED` |
+| `metrics_daily → clinical_signals` | `FIXED` |
+| `clinical_signals → health_scores` | `FIXED` |
+| Reconciliación ML (orders) | `FIXED / OPERATIONAL` |
+
+
+---
+
 ## Reconciliación Operativa (auditada 2026-03-10)
 
 ### Dictamen operativo: `FIXED / OPERATIONAL`  
