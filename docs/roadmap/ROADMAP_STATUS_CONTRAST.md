@@ -133,6 +133,13 @@ Con el core clínico V2 plenamente validado operativamente en todos sus tramos, 
 | `clinical_signals → health_scores` | `FIXED` |
 | Reconciliación ML (orders) | `FIXED / OPERATIONAL` |
 
+### ADRs de V3 abiertos
+
+| ADR | Título | Status |
+|---|---|---|
+| [ADR-0009](../adr/ADR-0009-v3-canonical-rebuild-strategy.md) | V3 Canonical Rebuild Strategy | Accepted |
+| [ADR-0010](../adr/ADR-0010-v3-canonical-identity-and-tenancy-model.md) | V3 Canonical Identity & Tenancy Model | Accepted |
+
 
 ---
 
