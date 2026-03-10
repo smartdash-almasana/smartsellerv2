@@ -20,6 +20,14 @@ Fecha de corte: 2026-03-09
 
 **Dictamen de este addendum:** `FIXED` (Trazabilidad operativa validada. 0 señales generadas con tenant_id o snapshot_id nulos en las últimas 24h).
 
+## Addendum focalizado (2026-03-10) — Tramo `v2_clinical_signals -> v2_health_scores`
+
+- Workers clínicos reportan e insertan score deductivo final asociando llave relacional completa. RPC Legacy lo hace idéntico por conteo.
+- Validado operativamente por API a DB Productiva: tabla `v2_health_scores` con 12 ejecuciones acumuladas (100% de consistencia de vinculación `run_id`, `snapshot_id`, `tenant_id`, `store_id`). Cero orfandad en score generation para fechas >= 24hs.
+- Las penalizaciones operan en restas desde base 100 y quedan registradas al cierre de corrida.
+
+**Dictamen de este addendum:** `FIXED` (Validación exitosa operativa).
+
 ## Qué se auditó
 - Estado DB refactor y gates QA asociados.
 - Estado typed writer y materialización de entidades V1.
@@ -48,7 +56,7 @@ Fecha de corte: 2026-03-09
 | domain_events → snapshots         | FIXED IN CODE                 | **FIXED** (Operativo verificado)        |
 | snapshots → metrics_daily         | (auditado 2026-03-10)         | **FIXED** (Migración a RPC atómica `v2_upsert_metrics_daily_merge` resuelve concurrency y memoización) |
 | metrics_daily → clinical_signals  | OK                            | OK                                      |
-| clinical_signals → health_scores  | OK                            | OK                                      |
+| clinical_signals → health_scores  | OK                            | **FIXED** (auditado 2026-03-10: deducción y trazabilidad validada)|
 
 ---
 
@@ -85,7 +93,7 @@ Fix validado operativamente:
 | `domain_events → snapshots` | `FIXED` |
 | `snapshots → metrics_daily` | `FIXED` |
 | `metrics_daily → clinical_signals` | `OK` |
-| `clinical_signals → health_scores` | `OK` |
+| `clinical_signals → health_scores` | `FIXED` |
 
 ### Dictamen
 El core clínico queda **cerrado y operativo** para el alcance V2 auditado.

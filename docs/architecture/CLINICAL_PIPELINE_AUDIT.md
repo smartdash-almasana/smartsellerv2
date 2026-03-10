@@ -61,6 +61,24 @@
 
 ---
 
+## Addendum focalizado — Tramo 4 (`v2_clinical_signals → v2_health_scores`) (2026-03-10)
+
+**Alcance:** validación operativa puntual del tramo 4 (sin reauditoría general).
+
+**Flujo real confirmado (repo):**
+- **Path activo (`runDailyClinicalV0`):** Cada worker clínico individual (ej. `zero-price-items-worker.ts`) tiene la responsabilidad de derivar la severidad de su métrica observada y hacer un upsert no destructivo sobre el score inicial (100) en `v2_health_scores` deduciendo puntos según severidad (`onConflict: 'store_id,run_id'`).
+- **Path legacy (`v2_run_engine_for_store` RPC):** Inserta un score directo basado en conteo de eventos y lo asocia a `run_id` y `snapshot_id`.
+
+**Validación SQL operativa (2026-03-10):**
+- Existencia y frescura: `v2_health_scores` cuenta con 12 registros productivos generados. Los más recientes son del 2026-03-10.
+- Linkage verificado: Todas las ejecuciones recientes contienen obligatoriamente las llaves `tenant_id`, `store_id`, `run_id`, `snapshot_id`. Hubo *0* scores generados sin vinculación completa en las últimas 24h.
+- Consistencia: En ejecuciones con señales vacías/triviales (`severity=none`), el score resuelto y persistido se mantiene en `100`. Las iteraciones con señales de severidad reflejaron descuentos (ej. score `90` y `95`).
+
+**Dictamen operativo de este addendum:** `FIXED`
+- Tramo plenamente funcional, con correcta derivación atómica, deducción algorítmica y estricto linkage de trazabilidad desde señales al score final por cada corrida del engine.
+
+---
+
 ## Pipeline canónico
 
 ```
@@ -132,9 +150,9 @@ Leen `v2_metrics_daily`, calculan baseline e insertan en `v2_clinical_signals`.
 
 ### Tramo 4 — `v2_clinical_signals → v2_health_scores`
 
-**Dictamen: `OK`**
+**Dictamen: `FIXED`** (Auditado 2026-03-10)
 
-Inserto atómico de scores sobre penalizaciones.
+Upsert combinatorio de scores sobre penalizaciones por signal. Validación operativa confirma `tenant_id`, `store_id`, `run_id` y `snapshot_id` mapeados sin orfandad en DB y cálculo determinístico partiendo de 100 deducido por peso de severidad.
 
 ---
 
