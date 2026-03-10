@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@v2/lib/supabase';
 import { getValidToken, ReauthorizationRequired } from '@v2/lib/meli-token';
+import { writeOrderFromDomainEvent } from '@v2/typed-writer/orders-writer';
 import crypto from 'crypto';
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -102,25 +103,32 @@ async function upsertDomainEvent(
     if (whErr) throw new Error(`[meli-reconcile] upsert webhook event failed: ${whErr.message}`);
     if (!whRow) return false; // Already existed
 
+    const eventPayload = {
+        source_event_id: whRow.event_id,
+        tenant_id: tenantId,
+        store_id: storeId,
+        event_type: 'order.reconciled',
+        entity_type: 'order',
+        entity_id: String(order.id),
+        occurred_at: order.date_last_updated || fetchedAt,
+        payload: order as Record<string, unknown>,
+    };
+
     const { data, error } = await supabaseAdmin
         .from('v2_domain_events')
-        .upsert(
-            {
-                source_event_id: whRow.event_id,
-                tenant_id: tenantId,
-                store_id: storeId,
-                event_type: 'order.reconciled',
-                entity_type: 'order',
-                entity_id: String(order.id),
-                occurred_at: order.date_last_updated || fetchedAt,
-                payload: order as Record<string, unknown>,
-            },
-            { onConflict: 'source_event_id', ignoreDuplicates: true }
-        )
+        .upsert(eventPayload, { onConflict: 'source_event_id', ignoreDuplicates: true })
         .select('domain_event_id')
         .maybeSingle<{ domain_event_id: string }>();
 
     if (error) throw new Error(`[meli-reconcile] upsert domain event failed: ${error.message}`);
+
+    if (data) {
+        await writeOrderFromDomainEvent(
+            { log: (msg) => console.log(msg) },
+            { ...eventPayload, domain_event_id: data.domain_event_id }
+        );
+    }
+
     return Boolean(data);
 }
 
