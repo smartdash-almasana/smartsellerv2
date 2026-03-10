@@ -42,6 +42,18 @@ export async function normalizeV3WebhookEvent(input: NormalizeV3WebhookInput): P
     const entity_id = asString(payload['entity_id'], whRow.source_event_id);
     const occurred_at = asString(payload['occurred_at'], whRow.received_at);
 
+    const { data: existingDomainEvent, error: existingErr } = await supabaseAdmin
+        .from('v3_domain_events')
+        .select('domain_event_id')
+        .eq('tenant_id', whRow.tenant_id)
+        .eq('store_id', whRow.store_id)
+        .eq('provider_key', whRow.provider_key)
+        .eq('source_event_id', whRow.source_event_id)
+        .limit(1)
+        .maybeSingle<{ domain_event_id: string }>();
+    if (existingErr) throw new Error(`[v3-normalizer] existing domain_event lookup failed: ${existingErr.message}`);
+    const existedBefore = Boolean(existingDomainEvent?.domain_event_id);
+
     const { data: deRow, error: writeErr } = await supabaseAdmin
         .from('v3_domain_events')
         .upsert(
@@ -75,6 +87,6 @@ export async function normalizeV3WebhookEvent(input: NormalizeV3WebhookInput): P
 
     return {
         domain_event_id: deRow.domain_event_id,
-        created: true,
+        created: !existedBefore,
     };
 }
