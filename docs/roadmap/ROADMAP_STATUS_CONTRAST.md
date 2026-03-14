@@ -169,3 +169,19 @@ Con el core clínico V2 plenamente validado operativamente en todos sus tramos, 
 2. huérfanas reconciliadas = 0
 
 Ver detalles completos en `docs/architecture/RECONCILIATION_AUDIT.md`.
+
+---
+
+## Apertura de primera superficie funcional V3 (2026-03-14)
+
+Con el pipeline V3 operativo (documentado en `docs/status/V3_PIPELINE_READY.md`), se cierran las primeras tres superficies read-only sobre V3:
+
+| # | Endpoint | Dictamen | Fecha |
+|---|---|---|---|
+| 1ª | `GET /api/v3/clinical-status` | `APPROVED WITH MINOR NOTES` | 2026-03-14 |
+| 2ª | `GET /api/v3/run-history` | `APPROVED WITH MINOR FIXES` (fixes aplicados) | 2026-03-14 |
+| 3ª | `GET /api/v3/store-pulse` | `APPROVED WITH MINOR FIXES` (fixes aplicados) | 2026-03-14 |
+
+**Disciplina operativa:** patrón anti-bugs documentado en `docs/architecture/V3_READ_MODEL_PATTERN.md`.
+
+Ver cierre completo en `docs/status/V3_PIPELINE_READY.md` § *Superficies read-only sobre V3*.

@@ -1,7 +1,7 @@
 // ============================================================================
-// SmartSeller V2 — Unlinked Payments Metrics Worker (Phase 3.A2)
-// Responsibility: compute payments_unlinked_1d → upsert v2_metrics_daily,
-//                derive payments_without_orders_24h → insert v2_clinical_signals,
+// SmartSeller V2 — Zero Price Items Metrics Worker (Phase 3.A3)
+// Responsibility: compute zero_price_items_1d → upsert v2_metrics_daily,
+//                derive zero_price_items_24h → insert v2_clinical_signals,
 //                update v2_health_scores via run_id.
 // Scope: 1 metric + 1 signal + 1 score. No writes to other tables.
 // No app code, no UI, no external APIs.
@@ -13,16 +13,16 @@ import { upsertMergedMetricsDaily } from './metrics-daily-writer';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-export interface PaymentsUnlinkedInput {
+export interface ZeroPriceItemsInput {
     tenant_id: string;
     store_id: string;
     metric_date: string; // 'YYYY-MM-DD' UTC
     run_id: string;
 }
 
-export interface PaymentsUnlinkedResult {
+export interface ZeroPriceItemsResult {
     metric_date: string;
-    payments_unlinked_1d: number;
+    zero_price_items_1d: number;
     severity: 'none' | 'info' | 'warning' | 'critical';
     signal_inserted: boolean;
     score_inserted: boolean;
@@ -33,8 +33,8 @@ export interface PaymentsUnlinkedResult {
 // ── Severity derivation (DB enum: info | warning | critical) ───────────────
 
 function deriveSeverity(n: number): 'none' | 'info' | 'warning' | 'critical' {
-    if (n >= 5) return 'critical';
-    if (n >= 3) return 'warning';
+    if (n >= 20) return 'critical';
+    if (n >= 5) return 'warning';
     if (n >= 1) return 'info';
     return 'none';
 }
@@ -50,43 +50,43 @@ function severityWeight(s: 'none' | 'info' | 'warning' | 'critical'): number {
 
 // ── Main worker ────────────────────────────────────────────────────────────
 
-export async function runPaymentsUnlinkedWorker(
-    input: PaymentsUnlinkedInput
-): Promise<PaymentsUnlinkedResult> {
+export async function runZeroPriceItemsWorker(
+    input: ZeroPriceItemsInput
+): Promise<ZeroPriceItemsResult> {
     const { tenant_id, store_id, metric_date, run_id } = input;
-    const log = (msg: string) => console.log(`[payments-unlinked-worker] ${msg}`);
+    const log = (msg: string) => console.log(`[zero-price-items-worker] ${msg}`);
 
     // ── Step 1: Read metric input from canonical snapshot payload ──────────────
     const snapshotInputs = await readSnapshotClinicalInputs({ tenant_id, store_id, run_id });
-    const payments_unlinked_1d = snapshotInputs.payments_unlinked_1d;
-    const sampleIds = snapshotInputs.payments_sample_ids.slice(0, 20);
+    const zero_price_items_1d = snapshotInputs.zero_price_items_1d;
+    const sampleItems = snapshotInputs.zero_price_sample_items.slice(0, 20);
 
-    log(`payments_unlinked_1d=${payments_unlinked_1d} for store=${store_id} date=${metric_date}`);
+    log(`zero_price_items_1d=${zero_price_items_1d} for store=${store_id} date=${metric_date}`);
 
     // ── Step 2: Upsert v2_metrics_daily ────────────────────────────────────
     await upsertMergedMetricsDaily({
         tenant_id,
         store_id,
         metric_date,
-        metrics_patch: { payments_unlinked_1d },
+        metrics_patch: { zero_price_items_1d },
     });
 
     log(`v2_metrics_daily upserted`);
 
     // ── Step 3: Derive severity ─────────────────────────────────────────────
-    const severity = deriveSeverity(payments_unlinked_1d);
+    const severity = deriveSeverity(zero_price_items_1d);
     log(`severity=${severity}`);
 
     if (severity === 'none') {
         log(`No signal threshold met — skipping signal and score.`);
         return {
             metric_date,
-            payments_unlinked_1d,
+            zero_price_items_1d,
             severity,
             signal_inserted: false,
             score_inserted: false,
             skipped: true,
-            skip_reason: `severity=none (N=${payments_unlinked_1d})`,
+            skip_reason: `severity=none (N=${zero_price_items_1d})`,
         };
     }
 
@@ -95,15 +95,15 @@ export async function runPaymentsUnlinkedWorker(
         .from('v2_clinical_signals')
         .select('signal_id')
         .eq('run_id', run_id)
-        .eq('signal_key', 'payments_without_orders_24h')
+        .eq('signal_key', 'zero_price_items_24h')
         .limit(1)
         .maybeSingle();
 
     if (existSignal) {
-        log(`Idempotency: signal payments_without_orders_24h already exists for run_id=${run_id}. Skipping.`);
+        log(`Idempotency: signal zero_price_items_24h already exists for run_id=${run_id}. Skipping.`);
         return {
             metric_date,
-            payments_unlinked_1d,
+            zero_price_items_1d,
             severity,
             signal_inserted: false,
             score_inserted: false,
@@ -114,10 +114,10 @@ export async function runPaymentsUnlinkedWorker(
 
     // ── Step 5: Insert v2_clinical_signals ─────────────────────────────────
     const evidence = {
-        payments_unlinked_1d,
+        zero_price_items_1d,
         window_days: 1,
         metric_date,
-        sample_payment_ids: sampleIds,
+        sample_items: sampleItems,
     };
 
     const { error: signalErr } = await supabaseAdmin
@@ -126,7 +126,7 @@ export async function runPaymentsUnlinkedWorker(
             tenant_id,
             store_id,
             run_id,
-            signal_key: 'payments_without_orders_24h',
+            signal_key: 'zero_price_items_24h',
             severity,
             evidence,
             created_at: new Date().toISOString(),
@@ -169,7 +169,7 @@ export async function runPaymentsUnlinkedWorker(
 
     return {
         metric_date,
-        payments_unlinked_1d,
+        zero_price_items_1d,
         severity,
         signal_inserted: true,
         score_inserted: true,

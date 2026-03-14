@@ -1,21 +1,36 @@
-# SmartSeller v2 — Technical Documentation
+# SmartSeller — Technical Documentation
 
 ## Purpose
 
-Canonical entry point for SmartSeller v2 technical documentation.
+Canonical entry point for SmartSeller technical documentation.
 
-This directory defines the architectural, authentication, database, operational, and product foundations of SmartSeller v2 as a clinical, multi-tenant operational monitoring system.
+This directory contains both historical V2 material and the current V3 clinical platform documentation.
+
+Current implementation status:
+
+- V3 canonical pipeline end-to-end is **READY**
+- V3 operational orchestrator is **READY**
+- V3 heartbeat and stage diagnostics are **READY**
+- V2 remains legacy/baseline documentation, not the future base of the system
+- Shopify remains out of scope in the current V3 stage
 
 ---
 
 ## Architecture
 
+- [V3 Pipeline Status](./status/V3_PIPELINE_READY.md)
 - [Overview](./architecture/overview.md)
 - [Identity Model](./architecture/identity-model.md)
 - [Event Pipeline](./architecture/event-pipeline.md)
 
 Defines the core system principles, identity boundaries, and deterministic clinical pipeline:
 `webhook_events → domain_events → snapshots → metrics → clinical_signals → health_score`.
+
+Operational source of truth for the current platform state:
+
+- V3 clinical pipeline and operational readiness: [V3 Pipeline Status](./status/V3_PIPELINE_READY.md)
+- V3 governance and ownership: [ADR-0011](./adr/ADR-0011-v3-pipeline-ownership-and-writer-governance.md)
+- V3 identity and tenancy: [ADR-0010](./adr/ADR-0010-v3-canonical-identity-and-tenancy-model.md)
 
 ---
 
@@ -93,11 +108,13 @@ Architectural Decision Records define irreversible or high-impact structural dec
 
 ## Global Invariants
 
-- SmartSeller v2 is a **clinical multi-tenant system**, not a vanity analytics dashboard.
+- SmartSeller is a **clinical multi-tenant system**, not a vanity analytics dashboard.
 - The dashboard never consumes raw `webhook_events`.
 - Every clinical state must be reconstructible from persisted history.
 - Identity separation between internal (`store_id`) and external (`external_account_id`) is mandatory.
 - Scores must be deterministic for a given time window and rule version.
+- V3 is the forward canonical base; V2 is not the future platform foundation.
+- Shopify is not part of the active V3 delivery scope at this stage.
 
 ---
 

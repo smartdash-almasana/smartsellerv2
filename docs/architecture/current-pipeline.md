@@ -1,4 +1,8 @@
-# Pipeline Clínico V2 (Source of Truth)
+# Pipeline Clínico V2 (Historical Reference)
+
+> Estado documental: este archivo describe el pipeline físico de V2 como referencia histórica.
+> La base futura y el estado operativo actual del sistema es V3.
+> Ver: [../status/V3_PIPELINE_READY.md](../status/V3_PIPELINE_READY.md)
 
 Este documento describe la arquitectura y el flujo físico de datos desde la recepción de eventos externos hasta la generación de scores clínicos, consolidando las decisiones de observabilidad y resiliencia (ADR-004, ADR-005, ADR-006, ADR-007).
 

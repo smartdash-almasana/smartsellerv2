@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@v2/lib/supabase';
 import { getValidToken, ReauthorizationRequired } from '@v2/lib/meli-token';
-import { writeOrderFromDomainEvent } from '@v2/typed-writer/orders-writer';
+import { writeOrderFromDomainEvent } from '@/v2/typed-writer/orders-writer';
 import crypto from 'crypto';
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -83,6 +83,11 @@ async function upsertDomainEvent(
     const fetchedAt = new Date().toISOString();
     const providerEventId = `reconcile:orders:${order.id}:${order.date_last_updated || fetchedAt}`;
 
+    // ── Fix A (applied at import) + Fix B: resolve existing webhook_event when idempotent ──
+    // Upsert webhook_event. On conflict (already existed), Supabase returns null with ignoreDuplicates.
+    // Instead of early-returning, we always resolve the event_id to continue downstream.
+    let webhookEventId: string | null = null;
+
     const { data: whRow, error: whErr } = await supabaseAdmin
         .from('v2_webhook_events')
         .upsert(
@@ -101,10 +106,28 @@ async function upsertDomainEvent(
         .maybeSingle<{ event_id: string }>();
 
     if (whErr) throw new Error(`[meli-reconcile] upsert webhook event failed: ${whErr.message}`);
-    if (!whRow) return false; // Already existed
+
+    if (whRow) {
+        // Newly inserted
+        webhookEventId = whRow.event_id;
+    } else {
+        // Fix B: already existed — resolve the existing event_id so we can still invoke typed writer
+        const { data: existing, error: existErr } = await supabaseAdmin
+            .from('v2_webhook_events')
+            .select('event_id')
+            .eq('store_id', storeId)
+            .eq('provider_event_id', providerEventId)
+            .maybeSingle<{ event_id: string }>();
+
+        if (existErr) throw new Error(`[meli-reconcile] lookup existing webhook event failed: ${existErr.message}`);
+        webhookEventId = existing?.event_id ?? null;
+    }
+
+    // If we can't resolve a webhook_event_id, skip this order (defensive)
+    if (!webhookEventId) return false;
 
     const eventPayload = {
-        source_event_id: whRow.event_id,
+        source_event_id: webhookEventId,
         tenant_id: tenantId,
         store_id: storeId,
         event_type: 'order.reconciled',
@@ -114,22 +137,41 @@ async function upsertDomainEvent(
         payload: order as Record<string, unknown>,
     };
 
-    const { data, error } = await supabaseAdmin
+    // Upsert domain_event — ignoreDuplicates=false so we always get back the domain_event_id
+    // whether newly inserted or already existing (ON CONFLICT DO UPDATE with a no-op touch).
+    const { data: deRow, error: deErr } = await supabaseAdmin
         .from('v2_domain_events')
-        .upsert(eventPayload, { onConflict: 'source_event_id', ignoreDuplicates: true })
+        .upsert(
+            eventPayload,
+            { onConflict: 'source_event_id', ignoreDuplicates: false }
+        )
         .select('domain_event_id')
         .maybeSingle<{ domain_event_id: string }>();
 
-    if (error) throw new Error(`[meli-reconcile] upsert domain event failed: ${error.message}`);
+    if (deErr) throw new Error(`[meli-reconcile] upsert domain event failed: ${deErr.message}`);
 
-    if (data) {
+    // Defensive fallback: if idempotent conflict returned no row, fetch existing domain_event_id
+    let domainEventId = deRow?.domain_event_id ?? null;
+    if (!domainEventId) {
+        const { data: existingDe, error: existingDeErr } = await supabaseAdmin
+            .from('v2_domain_events')
+            .select('domain_event_id')
+            .eq('source_event_id', webhookEventId)
+            .maybeSingle<{ domain_event_id: string }>();
+        if (existingDeErr) throw new Error(`[meli-reconcile] lookup existing domain event failed: ${existingDeErr.message}`);
+        domainEventId = existingDe?.domain_event_id ?? null;
+    }
+
+    // Always invoke typed writer — writeOrderFromDomainEvent upserts v2_orders with ON CONFLICT,
+    // so it is fully idempotent regardless of whether domain_event was new or already existed.
+    if (domainEventId) {
         await writeOrderFromDomainEvent(
             { log: (msg) => console.log(msg) },
-            { ...eventPayload, domain_event_id: data.domain_event_id }
+            { ...eventPayload, domain_event_id: domainEventId }
         );
     }
 
-    return Boolean(data);
+    return Boolean(whRow); // true = new insertion this run; false = already existed (idempotent re-process)
 }
 
 // ─── Get store context ───────────────────────────────────────────────

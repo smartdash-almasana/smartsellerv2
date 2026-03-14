@@ -81,7 +81,11 @@ export async function normalizeV3WebhookEvent(input: NormalizeV3WebhookInput): P
 
     const { error: statusErr } = await supabaseAdmin
         .from('v3_webhook_events')
-        .update({ processing_status: 'processed' })
+        .update({
+            processing_status: 'processed',
+            processing_claimed_at: null,
+            processing_error: null,
+        })
         .eq('webhook_event_id', webhook_event_id);
     if (statusErr) throw new Error(`[v3-normalizer] webhook status update failed: ${statusErr.message}`);
 

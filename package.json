@@ -6,7 +6,9 @@
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
-        "test:e2e": "playwright test"
+        "test:e2e": "playwright test",
+        "v3:fixtures:seed": "node scripts/v3_seed_tenant_isolation_fixtures.js",
+        "v3:test:tenant-isolation": "node scripts/v3_validate_tenant_isolation.js"
     },
     "dependencies": {
         "@radix-ui/react-slot": "^1.2.4",
@@ -16,6 +18,7 @@
         "clsx": "^2.1.1",
         "lucide-react": "^0.575.0",
         "next": "^15.0.0",
+        "pg": "^8.20.0",
         "react": "^18.0.0",
         "react-dom": "^18.0.0",
         "tailwind-merge": "^3.5.0"
