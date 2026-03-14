@@ -38,12 +38,12 @@ function sanitizeNext(raw: string | null): string | null {
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
-    const appId = process.env.MELI_APP_ID;
+    const appId = process.env.MELI_CLIENT_ID || process.env.MELI_APP_ID;
     const redirectUri = process.env.MELI_REDIRECT_URI;
 
     if (!appId || !redirectUri) {
         return NextResponse.json(
-            { error: 'Missing env: MELI_APP_ID or MELI_REDIRECT_URI' },
+            { error: 'Missing env: MELI_CLIENT_ID/MELI_APP_ID or MELI_REDIRECT_URI' },
             { status: 500 }
         );
     }
