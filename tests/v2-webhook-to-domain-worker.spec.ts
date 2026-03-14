@@ -6,6 +6,12 @@ import {
 } from '../src/v2/ingest/webhook-to-domain-worker';
 
 test.describe('v2 webhook->domain worker', () => {
+  test.skip(
+    !!process.env.CI &&
+      (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY),
+    'Skipping in CI: missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY',
+  );
+
   test('is idempotent across reruns for same source_event_id', async () => {
     const webhookRows: WebhookEventInput[] = [
       {
