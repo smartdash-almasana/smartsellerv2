@@ -8,11 +8,20 @@ This directory contains both historical V2 material and the current V3 clinical 
 
 Current implementation status:
 
-- V3 canonical pipeline end-to-end is **READY**
-- V3 operational orchestrator is **READY**
-- V3 heartbeat and stage diagnostics are **READY**
-- V2 remains legacy/baseline documentation, not the future base of the system
-- Shopify remains out of scope in the current V3 stage
+**V3 is the active source of truth.** V2 is legacy/historical reference only.
+
+| Layer | Status |
+|---|---|
+| V3 canonical pipeline end-to-end | ✅ READY |
+| V3 operational orchestrator | ✅ READY |
+| V3 heartbeat and stage diagnostics | ✅ READY |
+| `GET /api/v3/clinical-status` — 1st read-only surface | ✅ CLOSED |
+| `GET /api/v3/run-history` — 2nd read-only surface | ✅ CLOSED |
+| `GET /api/v3/store-pulse` — 3rd read-only surface | ✅ CLOSED |
+| `/v3/internal/store-pulse` — internal UI | ✅ ACTIVE |
+| V3 read model pattern (anti-bug discipline) | ✅ DOCUMENTED |
+| V2 | 🔒 Stabilization only — no structural expansion |
+| Shopify | ⏸ Out of scope at this V3 stage |
 
 ---
 
@@ -29,8 +38,10 @@ Defines the core system principles, identity boundaries, and deterministic clini
 Operational source of truth for the current platform state:
 
 - V3 clinical pipeline and operational readiness: [V3 Pipeline Status](./status/V3_PIPELINE_READY.md)
+- V3 read model pattern (anti-bug discipline): [V3_READ_MODEL_PATTERN](./architecture/V3_READ_MODEL_PATTERN.md)
 - V3 governance and ownership: [ADR-0011](./adr/ADR-0011-v3-pipeline-ownership-and-writer-governance.md)
 - V3 identity and tenancy: [ADR-0010](./adr/ADR-0010-v3-canonical-identity-and-tenancy-model.md)
+- V3 roadmap progress: [ROADMAP_STATUS_CONTRAST](./roadmap/ROADMAP_STATUS_CONTRAST.md)
 
 ---
 

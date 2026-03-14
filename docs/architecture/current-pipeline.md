@@ -1,8 +1,20 @@
 # Pipeline Clínico V2 (Historical Reference)
 
-> Estado documental: este archivo describe el pipeline físico de V2 como referencia histórica.
-> La base futura y el estado operativo actual del sistema es V3.
-> Ver: [../status/V3_PIPELINE_READY.md](../status/V3_PIPELINE_READY.md)
+> **Estado documental:** este archivo describe el pipeline físico de V2 como **referencia histórica**.
+> La base operativa activa del sistema es V3.
+> Ver: [V3 Pipeline Status](../status/V3_PIPELINE_READY.md) | [V3 Read Model Pattern](./V3_READ_MODEL_PATTERN.md)
+
+**V3 activo — superficies read-only cerradas:**
+
+| Endpoint | Estado |
+|---|---|
+| `GET /api/v3/clinical-status` | ✅ CLOSED |
+| `GET /api/v3/run-history` | ✅ CLOSED |
+| `GET /api/v3/store-pulse` | ✅ CLOSED |
+| `/v3/internal/store-pulse` UI interna | ✅ ACTIVE |
+
+**V2:** estabilización operativa únicamente. Sin expansión estructural.
+
 
 Este documento describe la arquitectura y el flujo físico de datos desde la recepción de eventos externos hasta la generación de scores clínicos, consolidando las decisiones de observabilidad y resiliencia (ADR-004, ADR-005, ADR-006, ADR-007).
 
