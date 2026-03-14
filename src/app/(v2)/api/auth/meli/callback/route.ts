@@ -12,7 +12,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { consumeOAuthState, exchangeCodeForTokens } from '@v2/lib/meli/oauth';
+import { consumeOAuthState, exchangeCodeForTokens, getMeliUserFromAccessToken } from '@v2/lib/meli/oauth';
 import { upsertStoreAndMembership } from '@v2/lib/stores/linkStore';
 import { persistInstallationTokens, createPendingInstallation } from '@v2/lib/meli/installations';
 import { createServerClient } from '@supabase/ssr';
@@ -210,17 +210,35 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // ── 4. Resolve Mercado Libre user id from token response ─────────────
-        const tokenRaw = tokens.raw as { user_id?: string | number } | null;
-        const externalAccountId = tokenRaw?.user_id !== undefined && tokenRaw?.user_id !== null
-            ? String(tokenRaw.user_id)
-            : null;
+        // ── 4. Resolve Mercado Libre identity from /users/me ─────────────────
+        let meliUser;
+        try {
+            meliUser = await getMeliUserFromAccessToken(tokens.access_token);
+        } catch (meErr) {
+            const message = meErr instanceof Error ? meErr.message : 'Failed to fetch Mercado Libre user';
+            return diagnosticResponse({
+                ...baseDiagnostics,
+                token_exchange_error_message: message,
+            });
+        }
+
+        const externalAccountId = meliUser?.id ? String(meliUser.id) : null;
         if (!externalAccountId) {
             return diagnosticResponse({
                 ...baseDiagnostics,
-                token_exchange_error_message: 'Token exchange response missing user_id',
+                token_exchange_error_message: 'Mercado Libre /users/me response missing id',
             });
         }
+        const displayName = meliUser?.nickname ? `ML ${meliUser.nickname}` : `ML ${externalAccountId}`;
+        const tokenRawObject =
+            typeof tokens.raw === 'object' && tokens.raw !== null
+                ? (tokens.raw as Record<string, unknown>)
+                : {};
+        const enrichedRaw = {
+            ...tokenRawObject,
+            user_id: externalAccountId,
+            nickname: meliUser?.nickname ?? null,
+        };
 
         if (!userId) {
             console.log('[auth/meli/callback] No user in session. Creating pending installation.');
@@ -228,7 +246,7 @@ export async function GET(request: NextRequest) {
                 providerKey: 'mercadolibre',
                 stateId: state,
                 externalAccountId,
-                tokens,
+                tokens: { ...tokens, raw: enrichedRaw },
             });
 
             // Redirect to completion flow (it will require login)
@@ -246,7 +264,7 @@ export async function GET(request: NextRequest) {
             userId,
             providerKey: 'mercadolibre',
             externalAccountId,
-            displayName: `ML ${externalAccountId}`,
+            displayName,
         });
 
         // ── 6. Persist tokens ─────────────────────────────────────────────────
@@ -255,7 +273,7 @@ export async function GET(request: NextRequest) {
             accessToken: tokens.access_token,
             refreshToken: tokens.refresh_token,
             expiresAt: tokens.expires_at,
-            raw: tokens.raw,
+            raw: enrichedRaw,
         });
 
         const target = preservedNext ?? '/post-login';

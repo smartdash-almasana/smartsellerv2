@@ -177,6 +177,10 @@ export async function refreshTokens(refreshToken: string): Promise<ExchangedToke
  */
 export async function getMeliUser(storeId: string): Promise<MeliUser> {
     const accessToken = await getValidToken(storeId);
+    return getMeliUserFromAccessToken(accessToken);
+}
+
+export async function getMeliUserFromAccessToken(accessToken: string): Promise<MeliUser> {
     const response = await fetch(MELI_ME_URL, {
         headers: { Authorization: `Bearer ${accessToken}` },
     });
