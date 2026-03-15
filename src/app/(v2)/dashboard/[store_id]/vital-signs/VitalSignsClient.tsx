@@ -83,19 +83,27 @@ function buildAreaMetricCards(areaKey: AreaKey, metricsRow: MetricsRow | null): 
     if (areaKey === "logistica") {
         const ordersCreated = metricNumber(metrics, "orders_created_1d");
         const cancelled = metricNumber(metrics, "orders_cancelled_1d");
-        return [
-            ordersCreated !== null ? { title: "Ordenes creadas hoy", value: String(ordersCreated), helper: metricDate, icon: Truck } : null,
-            cancelled !== null ? { title: "Cancelaciones hoy", value: String(cancelled), helper: metricDate, icon: AlertTriangle } : null,
-        ].filter((item): item is MetricCard => Boolean(item));
+        const cards: MetricCard[] = [];
+        if (ordersCreated !== null) {
+            cards.push({ title: "Ordenes creadas hoy", value: String(ordersCreated), helper: metricDate, icon: Truck });
+        }
+        if (cancelled !== null) {
+            cards.push({ title: "Cancelaciones hoy", value: String(cancelled), helper: metricDate, icon: AlertTriangle });
+        }
+        return cards;
     }
 
     if (areaKey === "atencion") {
         const received = metricNumber(metrics, "messages_received_1d");
         const answered = metricNumber(metrics, "messages_answered_1d");
-        return [
-            received !== null ? { title: "Mensajes recibidos hoy", value: String(received), helper: metricDate, icon: MessageCircle } : null,
-            answered !== null ? { title: "Mensajes respondidos hoy", value: String(answered), helper: metricDate, icon: Clock3 } : null,
-        ].filter((item): item is MetricCard => Boolean(item));
+        const cards: MetricCard[] = [];
+        if (received !== null) {
+            cards.push({ title: "Mensajes recibidos hoy", value: String(received), helper: metricDate, icon: MessageCircle });
+        }
+        if (answered !== null) {
+            cards.push({ title: "Mensajes respondidos hoy", value: String(answered), helper: metricDate, icon: Clock3 });
+        }
+        return cards;
     }
 
     if (areaKey === "reputacion") {
