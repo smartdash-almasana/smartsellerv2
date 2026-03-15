@@ -26,7 +26,7 @@ export default function AlertsCenterPage() {
             value: "contact@example.com",
             icon: Mail,
             tone: "border-emerald-200 bg-emerald-50/70",
-            status: "Verified",
+            status: "Verificado",
             active: emailToggle,
             toggle: () => setEmailToggle((value) => !value),
         },
@@ -35,7 +35,7 @@ export default function AlertsCenterPage() {
             value: "@SmartSellerBot",
             icon: MessageCircle,
             tone: "border-sky-200 bg-sky-50/70",
-            status: "Connected",
+            status: "Conectado",
             active: telegramToggle,
             toggle: () => setTelegramToggle((value) => !value),
         },
@@ -44,7 +44,7 @@ export default function AlertsCenterPage() {
             value: "+52 55 1234 5678",
             icon: Smartphone,
             tone: "border-amber-200 bg-amber-50/70",
-            status: "Pending",
+            status: "Pendiente",
             active: whatsappToggle,
             toggle: () => setWhatsappToggle((value) => !value),
         },
@@ -53,7 +53,6 @@ export default function AlertsCenterPage() {
     return (
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
             <section className="rounded-[28px] bg-[#0f2347] px-6 py-7 text-white shadow-[0_24px_60px_rgba(15,35,71,0.24)]">
-                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-300">Imagen Base 2</p>
                 <h1 className="mt-2 text-4xl font-black tracking-tight">Configuracion del Centro de Alertas</h1>
                 <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-200">
                     Destinos reales, politica global, severidad minima y horarios de silencio bajo un mismo criterio clinico.
@@ -88,7 +87,7 @@ export default function AlertsCenterPage() {
                                             </button>
                                         </div>
                                         <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1 text-xs font-bold text-slate-700">
-                                            {channel.status === "Pending" ? <AlertTriangle className="h-3.5 w-3.5 text-amber-500" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+                                            {channel.status === "Pendiente" ? <AlertTriangle className="h-3.5 w-3.5 text-amber-500" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
                                             {channel.status}
                                         </div>
                                         <input
@@ -224,7 +223,7 @@ export default function AlertsCenterPage() {
                                         <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${dailyBriefToggle ? "left-6" : "left-1"}`} />
                                     </button>
                                     <div>
-                                        <p className="text-lg font-black text-slate-900">Daily Brief</p>
+                                        <p className="text-lg font-black text-slate-900">Resumen Diario</p>
                                         <p className="text-sm text-slate-600">Enviar resumen de actividad a las 08:00.</p>
                                     </div>
                                 </div>

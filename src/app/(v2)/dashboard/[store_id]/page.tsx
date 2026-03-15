@@ -167,7 +167,7 @@ export default async function DashboardPrincipalPage({
                         <h2 className="text-2xl font-black tracking-tight">Resumen Ejecutivo</h2>
                         <p className="text-sm leading-7 text-slate-200">{executiveSummary(score, activeSignals)}</p>
                         <p className="text-sm leading-7 text-slate-300">
-                            El triage recomienda {actionQueue.length} frentes inmediatos para proteger ventas, reputacion y continuidad operativa.
+                            El analisis recomienda {actionQueue.length} frentes inmediatos para proteger ventas, reputacion y continuidad operativa.
                         </p>
                     </div>
 

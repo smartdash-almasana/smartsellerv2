@@ -20,7 +20,6 @@ export default function EvolutionPage() {
             <section className="rounded-[28px] bg-[#0f2347] px-6 py-7 text-white shadow-[0_24px_60px_rgba(15,35,71,0.24)]">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-300">Imagen Base 3</p>
                         <h1 className="mt-2 text-4xl font-black tracking-tight">Evolucion Clinica</h1>
                         <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-200">
                             Lectura historica del score, delta reciente y hitos aplicados para sostener la cuenta en trayectoria positiva.
@@ -32,7 +31,7 @@ export default function EvolutionPage() {
                             <p className="text-sm font-semibold text-slate-500">Score Actual</p>
                             <div className="mt-2 flex items-end gap-3">
                                 <span className="text-5xl font-black tracking-tight">92</span>
-                                <span className="pb-2 text-lg font-bold text-slate-700">Excellent</span>
+                                <span className="pb-2 text-lg font-bold text-slate-700">Excelente</span>
                             </div>
                         </div>
                         <div className="rounded-[20px] bg-white px-5 py-4 text-[#0f2347]">
@@ -69,7 +68,7 @@ export default function EvolutionPage() {
                 </div>
 
                 <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-                    <h3 className="mb-4 text-2xl font-black tracking-tight text-slate-900">Health Score Over Time</h3>
+                    <h3 className="mb-4 text-2xl font-black tracking-tight text-slate-900">Score de Salud a lo largo del tiempo</h3>
                     <div className="overflow-x-auto">
                         <div className="min-w-[720px] rounded-[22px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f4f9fe_100%)] p-4">
                             <svg viewBox="0 0 920 330" className="h-[320px] w-full">

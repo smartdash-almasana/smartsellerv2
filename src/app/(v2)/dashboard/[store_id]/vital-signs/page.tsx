@@ -49,7 +49,6 @@ export default function VitalSignsPage() {
     return (
         <div className="flex flex-col gap-6 lg:flex-row">
             <aside className="w-full rounded-[28px] bg-[#0f2347] p-5 text-white shadow-[0_24px_60px_rgba(15,35,71,0.24)] lg:w-72">
-                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-300">Imagen Base 4</p>
                 <h1 className="mt-2 text-4xl font-black tracking-tight">Signos Vitales</h1>
                 <p className="mt-2 text-sm leading-7 text-slate-200">Lectura por area, patologias activas e historial de intervenciones.</p>
 
