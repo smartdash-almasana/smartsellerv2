@@ -14,8 +14,11 @@ interface ScoreResult {
     store_id: string;
     score: number;
     computed_at: string;
-    run_id: string;
-    snapshot_id: string;
+    active_signals?: Array<{
+        signal_key: string;
+        severity: 'info' | 'warning' | 'critical';
+        evidence: Record<string, unknown>;
+    }>;
 }
 
 interface SyncButtonProps {
@@ -27,6 +30,27 @@ export default function SyncButton({ storeId }: SyncButtonProps) {
     const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
     const [score, setScore] = useState<ScoreResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    const severityLabel = (severity: 'info' | 'warning' | 'critical'): string => {
+        if (severity === 'critical') return 'Crítica';
+        if (severity === 'warning') return 'Advertencia';
+        return 'Informativa';
+    };
+
+    const actionTextForSignal = (signalKey: string): string => {
+        if (signalKey === 'no_orders_7d') return 'Activar campaña comercial y revisar publicaciones pausadas hoy.';
+        if (signalKey === 'cancellation_spike') return 'Auditar causas de cancelación y ajustar stock/tiempos de despacho.';
+        if (signalKey === 'unanswered_messages_spike') return 'Responder bandeja prioritaria y configurar cobertura de atención.';
+        if (signalKey === 'claims_opened') return 'Revisar reclamos abiertos y cerrar cada caso con plan de resolución.';
+        if (signalKey === 'low_activity_14d') return 'Incrementar actividad con nuevas publicaciones y seguimiento de mensajes.';
+        return 'Revisar la señal y ejecutar un plan correctivo hoy.';
+    };
+
+    const briefEvidence = (evidence: Record<string, unknown>): string => {
+        const entries = Object.entries(evidence).slice(0, 2);
+        if (entries.length === 0) return 'Sin evidencia adicional';
+        return entries.map(([key, value]) => `${key}: ${String(value)}`).join(' | ');
+    };
 
     async function handleSync() {
         setSyncing(true);
@@ -108,9 +132,27 @@ export default function SyncButton({ storeId }: SyncButtonProps) {
                     <ul style={{ marginTop: 8, paddingLeft: 20 }}>
                         <li>Score: <strong>{score.score}</strong> / 100</li>
                         <li>Computed at: <strong>{new Date(score.computed_at).toLocaleString()}</strong></li>
-                        <li style={{ fontSize: 11, color: '#64748b' }}>run_id: {score.run_id}</li>
-                        <li style={{ fontSize: 11, color: '#64748b' }}>snapshot_id: {score.snapshot_id}</li>
                     </ul>
+                    <div style={{ marginTop: 10 }}>
+                        <strong>Estado clínico</strong>
+                        {(score.active_signals ?? []).length === 0 ? (
+                            <p style={{ marginTop: 6, color: '#334155' }}>No hay alertas clínicas activas.</p>
+                        ) : (
+                            <ul style={{ marginTop: 8, paddingLeft: 20 }}>
+                                {(score.active_signals ?? []).map((signal) => (
+                                    <li key={signal.signal_key} style={{ marginBottom: 6 }}>
+                                        <strong>{signal.signal_key}</strong> [{severityLabel(signal.severity)}]
+                                        <div style={{ color: '#475569', fontSize: 12 }}>
+                                            Evidencia: {briefEvidence(signal.evidence)}
+                                        </div>
+                                        <div style={{ color: '#92400e', fontSize: 12 }}>
+                                            Acción: {actionTextForSignal(signal.signal_key)}
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
                     {score.score <= 55 && (
                         <p style={{ marginTop: 8, color: '#92400e', fontSize: 12 }}>
                             ⚠ Score reciente ya existía (&lt;1h); si no cambió, espere 1h o use fuerza manual.

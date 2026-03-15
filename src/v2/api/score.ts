@@ -25,6 +25,11 @@ export interface ScoreResponse {
     computed_at: string;
     run_id: string;
     snapshot_id: string;
+    active_signals: Array<{
+        signal_key: string;
+        severity: 'info' | 'warning' | 'critical';
+        evidence: Record<string, unknown>;
+    }>;
 }
 
 interface DailyMetrics {
@@ -50,6 +55,20 @@ interface Signal {
     evidence: Record<string, unknown>;
 }
 
+interface PersistedSignalRow {
+    signal_key: string;
+    severity: 'info' | 'warning' | 'critical';
+    evidence: Record<string, unknown> | null;
+}
+
+interface CachedScoreRow {
+    store_id: string;
+    score: number;
+    computed_at: string;
+    run_id: string;
+    snapshot_id: string;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function todayUTC(): string {
@@ -58,6 +77,29 @@ function todayUTC(): string {
 
 function isFresh(computedAt: string, maxAgeMs = 60 * 60 * 1000): boolean {
     return Date.now() - new Date(computedAt).getTime() < maxAgeMs;
+}
+
+function sortSignalsBySeverity<T extends { severity: 'info' | 'warning' | 'critical' }>(signals: T[]): T[] {
+    const weight = { critical: 3, warning: 2, info: 1 };
+    return [...signals].sort((a, b) => weight[b.severity] - weight[a.severity]);
+}
+
+async function getSignalsForRun(runId: string): Promise<ScoreResponse['active_signals']> {
+    const { data, error } = await supabaseAdmin
+        .from('v2_clinical_signals')
+        .select('signal_key,severity,evidence')
+        .eq('run_id', runId);
+
+    if (error) throw new Error(`[score-v0] clinical signals read failed: ${error.message}`);
+
+    const rows = (data ?? []) as PersistedSignalRow[];
+    return sortSignalsBySeverity(
+        rows.map((row) => ({
+            signal_key: row.signal_key,
+            severity: row.severity,
+            evidence: (row.evidence ?? {}) as Record<string, unknown>,
+        })),
+    );
 }
 
 // ─── Step 1: Resolve tenant_id ────────────────────────────────────────────────
@@ -349,12 +391,13 @@ export async function getLatestScore(storeId: string): Promise<ScoreResponse | n
         .eq('store_id', storeId)
         .order('computed_at', { ascending: false })
         .limit(1)
-        .maybeSingle<ScoreResponse>();
+        .maybeSingle<CachedScoreRow>();
 
     if (readErr) throw new Error(`[score-v0] read health_scores failed: ${readErr.message}`);
 
     if (existing && isFresh(existing.computed_at)) {
-        return existing;
+        const activeSignals = await getSignalsForRun(existing.run_id);
+        return { ...existing, active_signals: activeSignals };
     }
 
     // 2. Resolve tenant
@@ -399,7 +442,20 @@ export async function getLatestScore(storeId: string): Promise<ScoreResponse | n
         await persistScore(tenantId, storeId, runId, snapshotId, score, computedAt);
 
         await finalizeEngineRun(runId, 'done');
-        return { store_id: storeId, score, computed_at: computedAt, run_id: runId, snapshot_id: snapshotId };
+        return {
+            store_id: storeId,
+            score,
+            computed_at: computedAt,
+            run_id: runId,
+            snapshot_id: snapshotId,
+            active_signals: sortSignalsBySeverity(
+                signals.map((signal) => ({
+                    signal_key: signal.signal_key,
+                    severity: signal.severity,
+                    evidence: signal.evidence,
+                })),
+            ),
+        };
     } catch (err) {
         await finalizeEngineRun(runId, 'failed').catch((finalizeErr) => {
             const message = finalizeErr instanceof Error ? finalizeErr.message : String(finalizeErr);
