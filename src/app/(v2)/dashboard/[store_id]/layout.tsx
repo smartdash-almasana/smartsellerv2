@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { Activity, Bell, Home, Menu, TrendingUp } from "lucide-react";
+import { Activity, Bell, Menu, TrendingUp } from "lucide-react";
 
 type NavItem = {
     name: string;
@@ -33,7 +33,7 @@ export default function DashboardLayout({
     }, [store_id]);
 
     const navItems: NavItem[] = [
-        { name: "Home", href: `/dashboard/${store_id}`, icon: Home },
+        { name: "Dashboard", href: `/dashboard/${store_id}`, icon: Menu },
         { name: "Areas Vitales", href: `/dashboard/${store_id}/vital-signs`, icon: Activity },
         { name: "Evolucion", href: `/dashboard/${store_id}/evolution`, icon: TrendingUp },
         { name: "Centro de Alertas", href: `/dashboard/${store_id}/alerts`, icon: Bell },
@@ -43,16 +43,6 @@ export default function DashboardLayout({
         <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f8fbff_0%,#eef4fb_42%,#f8fafc_100%)] text-slate-900">
             <header className="sticky top-0 z-40 border-b border-slate-800 bg-[#0f2347] text-white shadow-[0_16px_40px_rgba(15,35,71,0.25)]">
                 <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-                    <div className="flex min-w-0 items-center gap-4">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
-                            <span className="text-xl font-black tracking-tight">S</span>
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-2xl font-black tracking-tight">SmartSeller</p>
-                            <p className="truncate text-sm text-slate-300">{storeName}</p>
-                        </div>
-                    </div>
-
                     <nav className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2 py-2 md:flex">
                         {navItems.map((item) => {
                             const active = pathname === item.href;
@@ -72,9 +62,9 @@ export default function DashboardLayout({
                         })}
                     </nav>
 
-                    <div className="hidden items-center gap-3 md:flex">
+                    <div className="ml-auto hidden items-center gap-3 md:flex">
                         <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100">
-                            Principal
+                            {storeName}
                         </div>
                         <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10">
                             <Menu className="h-4 w-4" />

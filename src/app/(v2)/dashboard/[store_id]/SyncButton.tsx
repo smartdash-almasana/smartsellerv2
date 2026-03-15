@@ -41,9 +41,23 @@ function severityLabel(severity: 'info' | 'warning' | 'critical'): string {
 }
 
 function briefEvidence(evidence: Record<string, unknown>): string {
+    const label = (key: string): string => {
+        if (key === 'orders_created_7d') return 'Ordenes creadas en 7 dias';
+        if (key === 'orders_cancelled_1d') return 'Cancelaciones hoy';
+        if (key === 'orders_created_1d') return 'Ordenes creadas hoy';
+        if (key === 'ratio') return 'Ratio observado';
+        if (key === 'messages_received_1d') return 'Mensajes recibidos hoy';
+        if (key === 'messages_answered_1d') return 'Mensajes respondidos hoy';
+        if (key === 'claims_opened_14d') return 'Reclamos abiertos en 14 dias';
+        if (key === 'orders_created_14d') return 'Ordenes creadas en 14 dias';
+        if (key === 'messages_received_14d') return 'Mensajes recibidos en 14 dias';
+        if (key === 'total_activity') return 'Actividad total en 14 dias';
+        return key.replace(/_/g, ' ');
+    };
+
     const entries = Object.entries(evidence).slice(0, 2);
     if (entries.length === 0) return 'Sin evidencia adicional';
-    return entries.map(([key, value]) => `${key}: ${String(value)}`).join(' | ');
+    return entries.map(([key, value]) => `${label(key)}: ${String(value)}`).join(' | ');
 }
 
 export default function SyncButton({ storeId }: SyncButtonProps) {
