@@ -320,10 +320,10 @@ async function persistScore(
 
 // ─── Step 0: Engine Run lifecycle ────────────────────────────────────────────
 
-async function createEngineRun(storeId: string): Promise<string> {
+async function createEngineRun(tenantId: string, storeId: string): Promise<string> {
     const { data, error } = await supabaseAdmin
         .from('v2_engine_runs')
-        .insert({ store_id: storeId, status: 'running' })
+        .insert({ tenant_id: tenantId, store_id: storeId, status: 'running' })
         .select('run_id')
         .single<{ run_id: string }>();
 
@@ -372,7 +372,7 @@ export async function getLatestScore(storeId: string): Promise<ScoreResponse | n
     const signals = evaluateSignals(today, sums7d, sums14d);
 
     // 6. Create engine run (satisfies FK on clinical_signals and health_scores)
-    const runId = await createEngineRun(storeId);
+    const runId = await createEngineRun(tenantId, storeId);
     const computedAt = new Date().toISOString();
 
     try {
