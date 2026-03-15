@@ -3,6 +3,18 @@ import { notFound, redirect } from "next/navigation";
 import SyncButton from "./SyncButton";
 import PolicyPanel from "./PolicyPanel";
 
+export type DashboardBootstrapStatus = "pending" | "running" | "completed" | "failed" | null;
+
+export function getNoScoreBootstrapMessage(bootstrapStatus: DashboardBootstrapStatus): string {
+  if (bootstrapStatus === "pending" || bootstrapStatus === "running") {
+    return "Bootstrap inicial en progreso. El score aparecerá al finalizar.";
+  }
+  if (bootstrapStatus === "failed") {
+    return "Bootstrap inicial falló. Se reintentará en background.";
+  }
+  return "Sin score calculado aún. Bootstrap inicial todavía no se inició.";
+}
+
 export default async function StoreDashboardPage({
   params,
 }: {
@@ -40,7 +52,17 @@ export default async function StoreDashboardPage({
 
   // Fetch current score (server-side, best-effort)
   let initialScore: { score: number; computed_at: string } | null = null;
+  let bootstrapStatus: DashboardBootstrapStatus = null;
   try {
+    const bootstrapRes = await fetch(`${baseUrl}/api/bootstrap/${store_id}`, {
+      cache: "no-store",
+      headers: { cookie: hdrs.get("cookie") ?? "" },
+    });
+    if (bootstrapRes.ok) {
+      const bootstrap = await bootstrapRes.json();
+      bootstrapStatus = bootstrap?.bootstrap_status ?? null;
+    }
+
     const scoreRes = await fetch(`${baseUrl}/api/score/${store_id}`, {
       cache: "no-store",
       headers: { cookie: hdrs.get("cookie") ?? "" },
@@ -82,7 +104,7 @@ export default async function StoreDashboardPage({
         </div>
       ) : (
         <div style={{ marginTop: 16, color: "#64748b", fontSize: 13 }}>
-          Sin score calculado aún. Sincronizá para generarlo.
+          {getNoScoreBootstrapMessage(bootstrapStatus)}
         </div>
       )}
 

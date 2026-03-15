@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '@v2/lib/supabase';
 import type { ExchangedTokens } from '@v2/lib/meli/oauth';
 
+type BootstrapStatus = 'pending' | 'running' | 'completed' | 'failed' | null;
+
 interface PersistInstallationTokensInput {
     storeId: string;
     accessToken: string;
@@ -89,5 +91,71 @@ export async function markInstallationLinked(
 
     if (error) {
         throw new Error(`[meli/installations] Failed to mark installation linked: ${error.message}`);
+    }
+}
+
+export async function requestInitialBootstrap(
+    installationId: string,
+    version = 'v1'
+): Promise<void> {
+    return requestInitialBootstrapWithDeps(
+        installationId,
+        version,
+        {
+            async readStatus(id) {
+                const { data, error } = await supabaseAdmin
+                    .from('v2_oauth_installations')
+                    .select('bootstrap_status')
+                    .eq('installation_id', id)
+                    .limit(1)
+                    .maybeSingle<{ bootstrap_status: BootstrapStatus }>();
+                if (error) throw new Error(`[meli/installations] Failed to read bootstrap status: ${error.message}`);
+                return data ?? null;
+            },
+            async setPending(id, nowIso, requestedVersion) {
+                const { data, error } = await supabaseAdmin
+                    .from('v2_oauth_installations')
+                    .update({
+                        bootstrap_status: 'pending',
+                        bootstrap_requested_at: nowIso,
+                        bootstrap_started_at: null,
+                        bootstrap_completed_at: null,
+                        bootstrap_error: null,
+                        bootstrap_version: requestedVersion,
+                    })
+                    .eq('installation_id', id)
+                    .or('bootstrap_status.is.null,bootstrap_status.eq.pending,bootstrap_status.eq.failed')
+                    .select('installation_id');
+                if (error) throw new Error(`[meli/installations] Failed to request initial bootstrap: ${error.message}`);
+                return data?.length ?? 0;
+            },
+        }
+    );
+}
+
+interface RequestInitialBootstrapDeps {
+    readStatus: (installationId: string) => Promise<{ bootstrap_status: BootstrapStatus } | null>;
+    setPending: (installationId: string, nowIso: string, version: string) => Promise<number>;
+}
+
+export async function requestInitialBootstrapWithDeps(
+    installationId: string,
+    version: string,
+    deps: RequestInitialBootstrapDeps
+): Promise<void> {
+    const current = await deps.readStatus(installationId);
+    if (!current) {
+        throw new Error('[meli/installations] Installation not found while requesting bootstrap');
+    }
+
+    // One-shot semantics: never reset active/completed work.
+    if (current.bootstrap_status === 'completed' || current.bootstrap_status === 'running') {
+        return;
+    }
+
+    const updatedRows = await deps.setPending(installationId, new Date().toISOString(), version);
+    if (updatedRows === 0) {
+        // Concurrency-safe no-op: status changed to running/completed between read and update.
+        return;
     }
 }

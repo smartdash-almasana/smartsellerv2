@@ -27,6 +27,24 @@ Definir el flujo de vinculación de cuentas externas de Mercado Libre (vendedore
    - Proceso de finalización para flujos "desconectados" o instalaciones iniciadas sin sesión previa.
    - Requiere autenticación de usuario humano (Supabase).
    - Realiza el "handshake" final entre el usuario autenticado y la instalación pendiente de ML.
+   - Encola el **Historical Bootstrap Sync** inicial (`bootstrap_status='pending'`) y delega ejecución al worker.
+
+## Historical Bootstrap Sync
+- **Objetivo**: evitar que una tienda recién conectada quede sin score inicial.
+- **Disparo**: al finalizar `/install/meli/complete`, solo se marca `pending` en `v2_oauth_installations`.
+- **Ejecución**: `GET/POST /api/worker/meli-bootstrap` (cron interno con `x-cron-secret`).
+- **Pipeline reutilizado**:
+  1. `POST /api/meli/sync/{store_id}?historical=1&max_orders=200`
+  2. `getLatestScore(storeId)` para materializar métricas/señales/snapshot/score.
+- **Estados persistidos**:
+  - `pending`
+  - `running`
+  - `completed`
+  - `failed`
+- **Dashboard sin score**:
+  - `pending/running`: muestra "Bootstrap inicial en progreso..."
+  - `failed`: muestra "Bootstrap inicial falló..."
+  - `null`: muestra "Bootstrap inicial todavía no se inició."
 
 ## Data Contracts
 ### `/api/auth/meli/start`

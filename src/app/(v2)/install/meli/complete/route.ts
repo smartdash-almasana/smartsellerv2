@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { getPendingInstallation, markInstallationLinked, persistInstallationTokens } from '@v2/lib/meli/installations';
+import {
+    getPendingInstallation,
+    markInstallationLinked,
+    persistInstallationTokens,
+    requestInitialBootstrap,
+} from '@v2/lib/meli/installations';
 import { upsertStoreAndMembership } from '@v2/lib/stores/linkStore';
 
 function appBaseUrl(request: NextRequest): string {
@@ -73,6 +78,7 @@ export async function GET(request: NextRequest) {
 
         // Mark as linked
         await markInstallationLinked(installationId, storeId, userId);
+        await requestInitialBootstrap(installationId, 'v1');
 
         return NextResponse.redirect(new URL(`/dashboard/${storeId}`, appBaseUrl(request)));
     } catch (error) {

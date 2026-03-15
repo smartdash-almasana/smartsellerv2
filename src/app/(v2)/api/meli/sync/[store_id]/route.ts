@@ -40,6 +40,29 @@ interface MeliOrder {
     date_closed: string | null;
 }
 
+function resolveMaxOrders(request: NextRequest): number {
+    const raw = request.nextUrl.searchParams.get('max_orders');
+    const parsed = Number(raw ?? '50');
+    if (!Number.isFinite(parsed) || parsed <= 0) return 50;
+    return Math.min(200, Math.floor(parsed));
+}
+
+function resolveHistoricalMode(request: NextRequest): boolean {
+    const raw = request.nextUrl.searchParams.get('historical');
+    if (!raw) return false;
+    return raw === '1' || raw.toLowerCase() === 'true';
+}
+
+function normalizeSecret(value: string): string {
+    return value.replace(/[\r\n\t\s]+/g, '').trim();
+}
+
+function isWorkerAuthorized(request: NextRequest): boolean {
+    const provided = normalizeSecret(request.headers.get('x-cron-secret') ?? '');
+    const expected = normalizeSecret(process.env.CRON_SECRET ?? '');
+    return Boolean(provided && expected && provided === expected);
+}
+
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
 
 async function getSessionUserId(request: NextRequest): Promise<string | null> {
@@ -72,9 +95,19 @@ async function getMembership(
     return data ?? null;
 }
 
+async function getStoreTenant(storeId: string): Promise<{ tenant_id: string } | null> {
+    const { data } = await supabaseAdmin
+        .from('v2_stores')
+        .select('tenant_id')
+        .eq('store_id', storeId)
+        .limit(1)
+        .maybeSingle<{ tenant_id: string }>();
+    return data ?? null;
+}
+
 // ─── ML Orders fetcher ────────────────────────────────────────────────────────
 
-async function fetchMeliOrders(storeId: string): Promise<MeliOrder[]> {
+async function fetchMeliOrders(storeId: string, maxOrders: number, historical: boolean): Promise<MeliOrder[]> {
     const accessToken = await getValidToken(storeId);
     const since = new Date();
     since.setUTCDate(since.getUTCDate() - 14);
@@ -91,17 +124,31 @@ async function fetchMeliOrders(storeId: string): Promise<MeliOrder[]> {
     const meBody = await meRes.json() as { id: number };
     const sellerId = meBody.id;
 
-    const url = `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.date_created.from=${sinceIso}T00:00:00.000-00:00&limit=50&offset=0`;
-    const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        cache: 'no-store',
-    });
-    if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`[meli/sync] orders/search failed (${res.status}): ${body.slice(0, 200)}`);
+    const orders: MeliOrder[] = [];
+    const pageSize = 50;
+    for (let offset = 0; orders.length < maxOrders; offset += pageSize) {
+        const remaining = maxOrders - orders.length;
+        const limit = Math.min(pageSize, remaining);
+        const url = historical
+            ? `https://api.mercadolibre.com/orders/search?seller=${sellerId}&limit=${limit}&offset=${offset}`
+            : `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.date_created.from=${sinceIso}T00:00:00.000-00:00&limit=${limit}&offset=${offset}`;
+        const res = await fetch(url, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            cache: 'no-store',
+        });
+        if (!res.ok) {
+            const body = await res.text();
+            throw new Error(`[meli/sync] orders/search failed (${res.status}): ${body.slice(0, 200)}`);
+        }
+
+        const body = await res.json() as { results: MeliOrder[] };
+        const page = body.results ?? [];
+        if (page.length === 0) break;
+        orders.push(...page);
+        if (page.length < limit) break;
     }
-    const body = await res.json() as { results: MeliOrder[] };
-    return body.results ?? [];
+
+    return orders;
 }
 
 // ─── Persist helpers ──────────────────────────────────────────────────────────
@@ -211,24 +258,38 @@ export async function POST(
     { params }: { params: Promise<{ store_id: string }> }
 ) {
     const { store_id } = await params;
+    const maxOrders = resolveMaxOrders(request);
+    const historical = resolveHistoricalMode(request);
+    const workerAuth = isWorkerAuthorized(request);
 
-    // 1. Auth
-    const userId = await getSessionUserId(request);
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // 1-2. Auth + access check
+    let tenant_id: string | null = null;
+    if (workerAuth) {
+        const store = await getStoreTenant(store_id);
+        tenant_id = store?.tenant_id ?? null;
+        if (!tenant_id) {
+            return NextResponse.json({ error: 'Store not found' }, { status: 404 });
+        }
+    } else {
+        const userId = await getSessionUserId(request);
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-    // 2. Membership check
-    const membership = await getMembership(userId, store_id);
-    if (!membership) {
-        return NextResponse.json({ error: 'Forbidden: store not accessible' }, { status: 403 });
+        const membership = await getMembership(userId, store_id);
+        if (!membership) {
+            return NextResponse.json({ error: 'Forbidden: store not accessible' }, { status: 403 });
+        }
+        tenant_id = membership.tenant_id;
     }
-    const { tenant_id } = membership;
+    if (!tenant_id) {
+        return NextResponse.json({ error: 'Store tenant not found' }, { status: 404 });
+    }
 
     // 3. Fetch orders from ML (token resolved internally by Token Gate)
     let orders: MeliOrder[];
     try {
-        orders = await fetchMeliOrders(store_id);
+        orders = await fetchMeliOrders(store_id, maxOrders, historical);
     } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error('[meli/sync] ML fetch failed:', msg);
