@@ -25,32 +25,32 @@ interface SyncButtonProps {
     storeId: string;
 }
 
+function signalLabel(signalKey: string): string {
+    if (signalKey === 'no_orders_7d') return 'Ritmo comercial en pausa';
+    if (signalKey === 'cancellation_spike') return 'Suba de cancelaciones';
+    if (signalKey === 'unanswered_messages_spike') return 'Mensajes sin respuesta';
+    if (signalKey === 'claims_opened') return 'Reclamos activos';
+    if (signalKey === 'low_activity_14d') return 'Actividad por debajo de lo esperado';
+    return 'Alerta operativa activa';
+}
+
+function severityLabel(severity: 'info' | 'warning' | 'critical'): string {
+    if (severity === 'critical') return 'Critica';
+    if (severity === 'warning') return 'Advertencia';
+    return 'Informativa';
+}
+
+function briefEvidence(evidence: Record<string, unknown>): string {
+    const entries = Object.entries(evidence).slice(0, 2);
+    if (entries.length === 0) return 'Sin evidencia adicional';
+    return entries.map(([key, value]) => `${key}: ${String(value)}`).join(' | ');
+}
+
 export default function SyncButton({ storeId }: SyncButtonProps) {
     const [syncing, setSyncing] = useState(false);
     const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
     const [score, setScore] = useState<ScoreResult | null>(null);
     const [error, setError] = useState<string | null>(null);
-
-    const severityLabel = (severity: 'info' | 'warning' | 'critical'): string => {
-        if (severity === 'critical') return 'Crítica';
-        if (severity === 'warning') return 'Advertencia';
-        return 'Informativa';
-    };
-
-    const actionTextForSignal = (signalKey: string): string => {
-        if (signalKey === 'no_orders_7d') return 'Activar campaña comercial y revisar publicaciones pausadas hoy.';
-        if (signalKey === 'cancellation_spike') return 'Auditar causas de cancelación y ajustar stock/tiempos de despacho.';
-        if (signalKey === 'unanswered_messages_spike') return 'Responder bandeja prioritaria y configurar cobertura de atención.';
-        if (signalKey === 'claims_opened') return 'Revisar reclamos abiertos y cerrar cada caso con plan de resolución.';
-        if (signalKey === 'low_activity_14d') return 'Incrementar actividad con nuevas publicaciones y seguimiento de mensajes.';
-        return 'Revisar la señal y ejecutar un plan correctivo hoy.';
-    };
-
-    const briefEvidence = (evidence: Record<string, unknown>): string => {
-        const entries = Object.entries(evidence).slice(0, 2);
-        if (entries.length === 0) return 'Sin evidencia adicional';
-        return entries.map(([key, value]) => `${key}: ${String(value)}`).join(' | ');
-    };
 
     async function handleSync() {
         setSyncing(true);
@@ -59,7 +59,6 @@ export default function SyncButton({ storeId }: SyncButtonProps) {
         setScore(null);
 
         try {
-            // Step 1: Sync
             const syncRes = await fetch(`/api/meli/sync/${storeId}`, {
                 method: 'POST',
                 cache: 'no-store',
@@ -72,7 +71,6 @@ export default function SyncButton({ storeId }: SyncButtonProps) {
             }
             setSyncResult(syncData);
 
-            // Step 2: Refresh score (force via ?force=true handled gracefully)
             const scoreRes = await fetch(`/api/score/${storeId}?t=${Date.now()}`, {
                 cache: 'no-store',
             });
@@ -88,76 +86,56 @@ export default function SyncButton({ storeId }: SyncButtonProps) {
     }
 
     return (
-        <div style={{ marginTop: 24 }}>
+        <div className="w-full md:w-auto">
             <button
                 onClick={handleSync}
                 disabled={syncing}
-                style={{
-                    padding: '10px 20px',
-                    background: syncing ? '#94a3b8' : '#3b82f6',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: syncing ? 'not-allowed' : 'pointer',
-                    fontWeight: 600,
-                    fontSize: 14,
-                }}
+                className={`inline-flex w-full items-center justify-center rounded-2xl px-5 py-3 text-sm font-bold text-white transition md:w-auto ${
+                    syncing ? 'bg-slate-400' : 'bg-[#0f2347] hover:bg-[#0b1b38]'
+                }`}
             >
-                {syncing ? 'Sincronizando…' : '⟳ Sincronizar ahora'}
+                {syncing ? 'Sincronizando...' : 'Sincronizar ahora'}
             </button>
 
             {error && (
-                <div style={{ marginTop: 12, padding: 12, background: '#fef2f2', borderRadius: 8, color: '#b91c1c', fontSize: 13 }}>
-                    <strong>Error:</strong> {error}
+                <div className="mt-3 rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                    Error: {error}
                 </div>
             )}
 
             {syncResult && (
-                <div style={{ marginTop: 12, padding: 12, background: '#f0fdf4', borderRadius: 8, fontSize: 13 }}>
-                    <strong>✓ Sincronización completada</strong>
-                    <ul style={{ marginTop: 8, paddingLeft: 20 }}>
-                        <li>Órdenes ML fetched: <strong>{syncResult.fetched_orders}</strong></li>
-                        <li>Webhooks insertados: <strong>{syncResult.inserted_webhooks}</strong></li>
-                        <li>Webhooks deduplicados: <strong>{syncResult.deduped_webhooks}</strong></li>
-                        {Object.entries(syncResult.domain_events_by_type).map(([k, v]) => (
-                            <li key={k}>{k}: <strong>{v}</strong></li>
-                        ))}
+                <div className="mt-3 rounded-[20px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-slate-700 shadow-sm">
+                    <p className="font-black text-slate-900">Sincronizacion completada</p>
+                    <ul className="mt-3 space-y-1">
+                        <li>Ordenes sincronizadas: <strong>{syncResult.fetched_orders}</strong></li>
+                        <li>Eventos nuevos: <strong>{syncResult.inserted_webhooks}</strong></li>
+                        <li>Eventos ya registrados: <strong>{syncResult.deduped_webhooks}</strong></li>
                     </ul>
                 </div>
             )}
 
             {score && (
-                <div style={{ marginTop: 12, padding: 12, background: '#eff6ff', borderRadius: 8, fontSize: 13 }}>
-                    <strong>Score actualizado</strong>
-                    <ul style={{ marginTop: 8, paddingLeft: 20 }}>
-                        <li>Score: <strong>{score.score}</strong> / 100</li>
-                        <li>Computed at: <strong>{new Date(score.computed_at).toLocaleString()}</strong></li>
-                    </ul>
-                    <div style={{ marginTop: 10 }}>
-                        <strong>Estado clínico</strong>
+                <div className="mt-3 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-slate-700 shadow-sm">
+                    <p className="font-black text-slate-900">Chequeo actualizado</p>
+                    <p className="mt-2">Score actual: <strong>{score.score}</strong> / 100</p>
+                    <p>Calculado: <strong>{new Date(score.computed_at).toLocaleString()}</strong></p>
+                    <div className="mt-4">
+                        <p className="font-black text-slate-900">Estado clinico</p>
                         {(score.active_signals ?? []).length === 0 ? (
-                            <p style={{ marginTop: 6, color: '#334155' }}>No hay alertas clínicas activas.</p>
+                            <p className="mt-2 text-slate-600">No hay alertas clinicas activas.</p>
                         ) : (
-                            <ul style={{ marginTop: 8, paddingLeft: 20 }}>
+                            <ul className="mt-2 space-y-2">
                                 {(score.active_signals ?? []).map((signal) => (
-                                    <li key={signal.signal_key} style={{ marginBottom: 6 }}>
-                                        <strong>{signal.signal_key}</strong> [{severityLabel(signal.severity)}]
-                                        <div style={{ color: '#475569', fontSize: 12 }}>
-                                            Evidencia: {briefEvidence(signal.evidence)}
-                                        </div>
-                                        <div style={{ color: '#92400e', fontSize: 12 }}>
-                                            Acción: {actionTextForSignal(signal.signal_key)}
-                                        </div>
+                                    <li key={signal.signal_key} className="rounded-2xl border border-sky-100 bg-white px-3 py-3">
+                                        <p className="font-bold text-slate-900">
+                                            {signalLabel(signal.signal_key)} [{severityLabel(signal.severity)}]
+                                        </p>
+                                        <p className="mt-1 text-xs text-slate-600">Evidencia: {briefEvidence(signal.evidence)}</p>
                                     </li>
                                 ))}
                             </ul>
                         )}
                     </div>
-                    {score.score <= 55 && (
-                        <p style={{ marginTop: 8, color: '#92400e', fontSize: 12 }}>
-                            ⚠ Score reciente ya existía (&lt;1h); si no cambió, espere 1h o use fuerza manual.
-                        </p>
-                    )}
                 </div>
             )}
         </div>
