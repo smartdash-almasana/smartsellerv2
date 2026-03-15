@@ -2,18 +2,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import SyncButton from "./SyncButton";
 import PolicyPanel from "./PolicyPanel";
-
-export type DashboardBootstrapStatus = "pending" | "running" | "completed" | "failed" | null;
-
-export function getNoScoreBootstrapMessage(bootstrapStatus: DashboardBootstrapStatus): string {
-  if (bootstrapStatus === "pending" || bootstrapStatus === "running") {
-    return "Bootstrap inicial en progreso. El score aparecerá al finalizar.";
-  }
-  if (bootstrapStatus === "failed") {
-    return "Bootstrap inicial falló. Se reintentará en background.";
-  }
-  return "Sin score calculado aún. Bootstrap inicial todavía no se inició.";
-}
+import { DashboardBootstrapStatus, getNoScoreBootstrapMessage } from "./bootstrap-message";
 
 export default async function StoreDashboardPage({
   params,

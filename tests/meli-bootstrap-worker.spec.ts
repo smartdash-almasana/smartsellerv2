@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { runMeliBootstrapWorkerWithDeps } from '../src/app/(v2)/api/worker/meli-bootstrap/route';
+import { runMeliBootstrapWorkerWithDeps } from '../src/app/(v2)/api/worker/meli-bootstrap/worker';
 
 type Status = 'pending' | 'running' | 'completed' | 'failed';
 
@@ -91,4 +91,3 @@ test.describe('meli bootstrap worker', () => {
     expect(jobs.get('i3')?.bootstrap_status).toBe('completed');
   });
 });
-

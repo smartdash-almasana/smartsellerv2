@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { getNoScoreBootstrapMessage } from '../src/app/(v2)/dashboard/[store_id]/page';
+import { getNoScoreBootstrapMessage } from '../src/app/(v2)/dashboard/[store_id]/bootstrap-message';
 
 test.describe('dashboard bootstrap no-score message', () => {
   test('pending/running shows in-progress message', async () => {
@@ -26,4 +26,3 @@ test.describe('dashboard bootstrap no-score message', () => {
     );
   });
 });
-
