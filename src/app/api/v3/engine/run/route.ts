@@ -3,6 +3,7 @@ import { materializeV3MetricsDaily } from '@/v3/engine/metrics-writer';
 import { materializeV3ClinicalSignals } from '@/v3/engine/signals-writer';
 import { materializeV3HealthScore } from '@/v3/engine/health-score-writer';
 import { ensureV3Snapshot } from '@/v3/engine/snapshot-writer';
+import { supabaseAdmin } from '@v2/lib/supabase';
 
 interface V3EngineRunRequestBody {
     tenant_id?: string;
@@ -10,8 +11,53 @@ interface V3EngineRunRequestBody {
     metric_date?: string;
 }
 
+function isBlockedSeedUuid(value: string): boolean {
+    return value === '11111111-4444-4111-8111-111111111111' || value.startsWith('22222222-');
+}
+
+function isoDayBounds(metricDate: string): { startIso: string; endIso: string } {
+    const startIso = `${metricDate}T00:00:00.000Z`;
+    const startMs = Date.parse(startIso);
+    if (!Number.isFinite(startMs)) {
+        throw new Error(`[v3-engine-run] invalid metric_date: ${metricDate}`);
+    }
+    const endIso = new Date(startMs + 24 * 60 * 60 * 1000).toISOString();
+    return { startIso, endIso };
+}
+
+async function loadClinicalInputs(tenant_id: string, store_id: string, metricDate: string): Promise<Record<string, unknown>> {
+    const { startIso, endIso } = isoDayBounds(metricDate);
+    const { data, error } = await supabaseAdmin
+        .from('v3_domain_events')
+        .select('event_type,source_webhook_event_id')
+        .eq('tenant_id', tenant_id)
+        .eq('store_id', store_id)
+        .gte('occurred_at', startIso)
+        .lt('occurred_at', endIso);
+    if (error) throw new Error(`[v3-engine-run] domain_events read failed: ${error.message}`);
+
+    let ordersCreated1d = 0;
+    const webhookIds = new Set<string>();
+    for (const row of data ?? []) {
+        const eventType = (row as { event_type?: string }).event_type ?? '';
+        const webhookId = (row as { source_webhook_event_id?: string }).source_webhook_event_id ?? '';
+        if (eventType === 'order.created') ordersCreated1d++;
+        if (webhookId) webhookIds.add(webhookId);
+    }
+
+    return {
+        source_webhook_events_1d: webhookIds.size,
+        source_domain_events_1d: (data ?? []).length,
+        orders_created_1d: ordersCreated1d,
+    };
+}
+
 export async function POST(request: Request) {
     try {
+        if ((process.env.V3_REPAIR_FREEZE ?? '').trim() === '1') {
+            return Response.json({ ok: false, error: 'V3 repair freeze enabled' }, { status: 503 });
+        }
+
         const body = (await request.json()) as V3EngineRunRequestBody;
         const tenant_id = (body.tenant_id ?? '').trim();
         const store_id = (body.store_id ?? '').trim();
@@ -19,24 +65,25 @@ export async function POST(request: Request) {
 
         if (!tenant_id) return Response.json({ ok: false, error: 'Missing tenant_id' }, { status: 400 });
         if (!store_id) return Response.json({ ok: false, error: 'Missing store_id' }, { status: 400 });
+        if (isBlockedSeedUuid(tenant_id) || isBlockedSeedUuid(store_id)) {
+            return Response.json({ ok: false, error: 'Seed/test UUID blocked in V3 engine run endpoint' }, { status: 422 });
+        }
 
         const runResult = await ensureV3EngineRun({
             tenant_id,
             store_id,
             metric_date,
         });
+        const clinicalInputs = await loadClinicalInputs(tenant_id, store_id, runResult.metric_date);
 
         const snapshotResult = await ensureV3Snapshot({
             tenant_id,
             store_id,
             run_id: runResult.run_id,
             payload: {
-                source: 'v3_engine_run_skeleton',
+                source: 'v3_engine_run_domain_aggregate',
                 metric_date: runResult.metric_date,
-                clinical_inputs: {
-                    source_webhook_events_1d: 0,
-                    source_domain_events_1d: 0,
-                },
+                clinical_inputs: clinicalInputs,
                 seeded_at: new Date().toISOString(),
             },
         });

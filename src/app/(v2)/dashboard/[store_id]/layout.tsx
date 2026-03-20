@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { Activity, Bell, Menu, TrendingUp } from "lucide-react";
+import { Activity, Bell, LogOut, Menu, TrendingUp } from "lucide-react";
 
 type NavItem = {
     name: string;
@@ -62,13 +62,19 @@ export default function DashboardLayout({
                         })}
                     </nav>
 
-                    <div className="ml-auto hidden items-center gap-3 md:flex">
-                        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100">
+                    <div className="ml-auto flex items-center gap-3">
+                        <div className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100 md:block">
                             {storeName}
                         </div>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10">
-                            <Menu className="h-4 w-4" />
-                        </div>
+                        <form action="/api/auth/logout" method="post">
+                            <button
+                                type="submit"
+                                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
+                            >
+                                <LogOut className="h-4 w-4" />
+                                Logout
+                            </button>
+                        </form>
                     </div>
                 </div>
 

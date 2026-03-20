@@ -31,8 +31,19 @@ function asNumber(value: unknown): number {
     return Number.isFinite(n) ? n : 0;
 }
 
+function minusDays(metricDate: string, days: number): string {
+    const startIso = `${metricDate}T00:00:00.000Z`;
+    const startMs = Date.parse(startIso);
+    if (!Number.isFinite(startMs)) {
+        throw new Error(`[v3-signals-writer] invalid metric_date: ${metricDate}`);
+    }
+    const shifted = new Date(startMs - days * 24 * 60 * 60 * 1000);
+    return shifted.toISOString().slice(0, 10);
+}
+
 export async function materializeV3ClinicalSignals(input: MaterializeV3SignalsInput): Promise<MaterializeV3SignalsResult> {
     const { tenant_id, store_id, run_id, metric_date } = input;
+    const windowStartDate = minusDays(metric_date, 6);
 
     const { data: metricsRow, error: metricsErr } = await supabaseAdmin
         .from('v3_metrics_daily')
@@ -49,6 +60,21 @@ export async function materializeV3ClinicalSignals(input: MaterializeV3SignalsIn
     const webhookCount = asNumber(metrics['source_webhook_events_1d']);
     const domainCount = asNumber(metrics['source_domain_events_1d']);
     const gap = Math.max(0, webhookCount - domainCount);
+
+    const { data: recentRows, error: recentErr } = await supabaseAdmin
+        .from('v3_metrics_daily')
+        .select('metrics')
+        .eq('tenant_id', tenant_id)
+        .eq('store_id', store_id)
+        .gte('metric_date', windowStartDate)
+        .lte('metric_date', metric_date);
+    if (recentErr) throw new Error(`[v3-signals-writer] rolling 7d metrics lookup failed: ${recentErr.message}`);
+
+    let ordersCreated7d = 0;
+    for (const row of recentRows ?? []) {
+        const rowMetrics = asObject((row as { metrics?: Record<string, unknown> | null }).metrics);
+        ordersCreated7d += asNumber(rowMetrics['orders_created_1d']);
+    }
 
     const candidates: Array<{
         signal_key: string;
@@ -71,6 +97,16 @@ export async function materializeV3ClinicalSignals(input: MaterializeV3SignalsIn
                     source_webhook_events_1d: webhookCount,
                     source_domain_events_1d: domainCount,
                     lag_count_1d: gap,
+                },
+            },
+            {
+                signal_key: 'no_orders_7d',
+                severity: ordersCreated7d === 0 ? 'critical' : 'none',
+                evidence: {
+                    metric_date,
+                    window_days: 7,
+                    window_start_date: windowStartDate,
+                    orders_created_7d: ordersCreated7d,
                 },
             },
         ];

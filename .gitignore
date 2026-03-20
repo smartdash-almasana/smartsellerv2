@@ -24,3 +24,5 @@ test_output.txt
 tmp-audit.md
 .vercel
 .env*.local
+
+tsconfig.tsbuildinfo

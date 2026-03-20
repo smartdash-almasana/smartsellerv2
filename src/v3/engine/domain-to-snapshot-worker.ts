@@ -70,12 +70,15 @@ function isoDayBounds(metricDate: string): { startIso: string; endIso: string } 
 
 function buildClinicalInputs(rows: DomainEventAggregateRow[]): Record<string, unknown> {
     const webhookIds = new Set<string>();
+    let ordersCreated1d = 0;
     for (const row of rows) {
         if (row.source_webhook_event_id) webhookIds.add(row.source_webhook_event_id);
+        if (row.event_type === 'order.created') ordersCreated1d++;
     }
     return {
         source_domain_events_1d: rows.length,
         source_webhook_events_1d: webhookIds.size,
+        orders_created_1d: ordersCreated1d,
     };
 }
 

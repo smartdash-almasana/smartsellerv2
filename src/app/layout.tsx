@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/landing/Header";
-import Footer from "@/components/landing/Footer";
+import { ConditionalHeader, ConditionalFooter } from "@/components/layout/ConditionalWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -42,11 +41,11 @@ export default function RootLayout({
     return (
         <html lang="es" className="scroll-smooth">
             <body className={`${inter.className} min-h-screen flex flex-col antialiased bg-background text-foreground`}>
-                <Header />
+                <ConditionalHeader />
                 <main className="flex-grow">
                     {children}
                 </main>
-                <Footer />
+                <ConditionalFooter />
             </body>
         </html>
     );

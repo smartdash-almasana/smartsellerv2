@@ -23,6 +23,47 @@ function asString(value: unknown, fallback: string): string {
     return typeof value === 'string' && value.trim() ? value.trim() : fallback;
 }
 
+function inferEventType(providerKey: WebhookRow['provider_key'], payload: Record<string, unknown>): string {
+    const explicit = asString(payload['event_type'], '');
+    if (explicit) return explicit;
+    if (providerKey !== 'mercadolibre') return 'unknown.event';
+
+    const topic = asString(payload['topic'], '');
+    if (topic === 'orders_v2') return 'order.created';
+    if (topic === 'questions') return 'message.received';
+    if (topic === 'claims') return 'claim.opened';
+    if (topic === 'payments') return 'payment.updated';
+    return 'unknown.event';
+}
+
+function inferEntityType(payload: Record<string, unknown>): string {
+    const explicit = asString(payload['entity_type'], '');
+    if (explicit) return explicit;
+
+    const resource = asString(payload['resource'], '');
+    const parts = resource.split('/').filter(Boolean);
+    return parts[0] ?? 'unknown';
+}
+
+function inferEntityId(sourceEventId: string, payload: Record<string, unknown>): string {
+    const explicit = asString(payload['entity_id'], '');
+    if (explicit) return explicit;
+
+    const resource = asString(payload['resource'], '');
+    const parts = resource.split('/').filter(Boolean);
+    return parts[1] ?? sourceEventId;
+}
+
+function inferOccurredAt(receivedAt: string, payload: Record<string, unknown>): string {
+    const explicit = asString(payload['occurred_at'], '');
+    if (explicit) return explicit;
+
+    const sentAt = asString(payload['sent'], '');
+    if (sentAt) return sentAt;
+
+    return receivedAt;
+}
+
 export async function normalizeV3WebhookEvent(input: NormalizeV3WebhookInput): Promise<NormalizeV3WebhookResult> {
     const { webhook_event_id } = input;
 
@@ -37,10 +78,10 @@ export async function normalizeV3WebhookEvent(input: NormalizeV3WebhookInput): P
     if (!whRow) throw new Error('[v3-normalizer] webhook event not found');
 
     const payload = whRow.payload ?? {};
-    const event_type = asString(payload['event_type'], 'unknown.event');
-    const entity_type = asString(payload['entity_type'], 'unknown');
-    const entity_id = asString(payload['entity_id'], whRow.source_event_id);
-    const occurred_at = asString(payload['occurred_at'], whRow.received_at);
+    const event_type = inferEventType(whRow.provider_key, payload);
+    const entity_type = inferEntityType(payload);
+    const entity_id = inferEntityId(whRow.source_event_id, payload);
+    const occurred_at = inferOccurredAt(whRow.received_at, payload);
 
     const { data: existingDomainEvent, error: existingErr } = await supabaseAdmin
         .from('v3_domain_events')

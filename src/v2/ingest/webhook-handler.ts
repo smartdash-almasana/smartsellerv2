@@ -6,6 +6,7 @@
 
 import { supabaseAdmin } from '../lib/supabase';
 import type { StoreRow } from '../types/v2';
+import { adaptMeliWebhookToV3 } from '@/v3/adapters/ml/webhook-adapter';
 
 // ─── Incoming payload shape from MercadoLibre ────────────────────────────────
 interface MeliWebhookPayload {
@@ -101,6 +102,14 @@ export async function handleMeliWebhook(rawPayload: unknown): Promise<HandlerRes
             raw_payload: rawPayload as Record<string, unknown>,
         })
         .throwOnError();
+
+    // Dual-write temporal: V2 sigue siendo el endpoint productivo mientras V3 recibe tráfico real.
+    try {
+        await adaptMeliWebhookToV3(rawPayload as Record<string, unknown>);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('[webhook-handler] V3 dual-write failed:', { message });
+    }
 
     return { status: 200, body: { ok: true } };
 }

@@ -12,6 +12,10 @@ function isAuthorized(request: NextRequest): boolean {
     return provided === expected;
 }
 
+function isRepairFrozen(): boolean {
+    return (process.env.V3_REPAIR_FREEZE ?? '').trim() === '1';
+}
+
 function parseLimit(value: string | null): number {
     const n = Number(value ?? '50');
     if (!Number.isFinite(n) || n <= 0) return 50;
@@ -58,6 +62,9 @@ export async function GET(request: NextRequest) {
         if (!isAuthorized(request)) {
             return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
         }
+        if (isRepairFrozen()) {
+            return NextResponse.json({ ok: false, error: 'V3 repair freeze enabled' }, { status: 503 });
+        }
         return await run(request);
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -69,6 +76,9 @@ export async function POST(request: NextRequest) {
     try {
         if (!isAuthorized(request)) {
             return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+        }
+        if (isRepairFrozen()) {
+            return NextResponse.json({ ok: false, error: 'V3 repair freeze enabled' }, { status: 503 });
         }
         return await run(request);
     } catch (error) {
