@@ -50,6 +50,42 @@ export async function materializeV3MetricsDaily(input: MaterializeV3MetricsInput
 
     const metrics = deriveMetricsFromSnapshotPayload(asObject(snapshot.payload));
 
+    // --- question metrics from v3_domain_events ---
+    const windowStart = `${metric_date}T00:00:00.000Z`;
+    const windowEnd   = `${metric_date}T23:59:59.999Z`;
+
+    const { data: questionsReceived, error: qrErr } = await supabaseAdmin
+        .from('v3_domain_events')
+        .select('entity_id')
+        .eq('tenant_id', tenant_id)
+        .eq('store_id', store_id)
+        .eq('event_type', 'question.received')
+        .gte('normalized_at', windowStart)
+        .lte('normalized_at', windowEnd);
+    if (qrErr) throw new Error(`[v3-metrics-writer] question.received lookup failed: ${qrErr.message}`);
+
+    const receivedIds = new Set((questionsReceived ?? []).map((r) => (r as { entity_id: string }).entity_id));
+    const questionsReceivedCount = receivedIds.size;
+
+    let unansweredCount = 0;
+    if (receivedIds.size > 0) {
+        const { data: questionsAnswered, error: qaErr } = await supabaseAdmin
+            .from('v3_domain_events')
+            .select('entity_id')
+            .eq('tenant_id', tenant_id)
+            .eq('store_id', store_id)
+            .eq('event_type', 'question.answered')
+            .gte('normalized_at', windowStart)
+            .lte('normalized_at', windowEnd);
+        if (qaErr) throw new Error(`[v3-metrics-writer] question.answered lookup failed: ${qaErr.message}`);
+
+        const answeredIds = new Set((questionsAnswered ?? []).map((r) => (r as { entity_id: string }).entity_id));
+        unansweredCount = [...receivedIds].filter((id) => !answeredIds.has(id)).length;
+    }
+
+    metrics['questions_received_1d'] = questionsReceivedCount;
+    metrics['unanswered_questions_24h_count_1d'] = unansweredCount;
+
     const { data: existing, error: existingErr } = await supabaseAdmin
         .from('v3_metrics_daily')
         .select('tenant_id')
