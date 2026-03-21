@@ -5,7 +5,7 @@
  *
  * Strategy (ordered):
  *   1. Look up v3_stores by store_key = external_account_id AND provider_key = 'mercadolibre'
- *   2. If not found, fall back to v2_stores (bridge for stores not yet migrated to V3)
+ *   2. If not found, resolve explicit mapping from v3_store_v2_bridge
  *   3. If neither found → throw (identity unresolvable, block ingestion)
  *
  * The adapter MUST NOT call this with a null/empty external_account_id.
@@ -26,7 +26,7 @@ interface V3StoreRow {
     store_id: string;
 }
 
-interface V2StoreRow {
+interface V3BridgeRow {
     tenant_id: string;
     store_id: string;
 }
@@ -66,32 +66,33 @@ export async function resolveV3MeliIdentity(
         };
     }
 
-    // --- Step 2: bridge from v2_stores ---
-    const { data: v2Row, error: v2Err } = await supabaseAdmin
-        .from('v2_stores')
+    // --- Step 2: explicit bridge mapping (temporary V2 dependency) ---
+    const { data: bridgeRow, error: bridgeErr } = await supabaseAdmin
+        .from('v3_store_v2_bridge')
         .select('tenant_id, store_id')
         .eq('provider_key', 'mercadolibre')
+        .eq('is_active', true)
         .eq('external_account_id', externalAccountId)
         .limit(1)
-        .maybeSingle<V2StoreRow>();
+        .maybeSingle<V3BridgeRow>();
 
-    if (v2Err) {
+    if (bridgeErr) {
         throw new Error(
-            `[v3/ml-identity] v2_stores bridge lookup failed: ${v2Err.message}`
+            `[v3/ml-identity] v3_store_v2_bridge lookup failed: ${bridgeErr.message}`
         );
     }
 
-    if (v2Row) {
+    if (bridgeRow) {
         return {
-            tenant_id: v2Row.tenant_id,
-            store_id: v2Row.store_id,
+            tenant_id: bridgeRow.tenant_id,
+            store_id: bridgeRow.store_id,
             source: 'v2_bridge',
         };
     }
 
     // --- Identity unresolvable ---
     throw new Error(
-        `[v3/ml-identity] No store found for ML account ${externalAccountId} in v3_stores or v2_stores. ` +
-        'Webhook dropped. Register or migrate the store first.'
+        `[v3/ml-identity] No store found for ML account ${externalAccountId} in v3_stores or v3_store_v2_bridge. ` +
+        'Webhook dropped. Bridge mapping required while OAuth remains in V2.'
     );
 }

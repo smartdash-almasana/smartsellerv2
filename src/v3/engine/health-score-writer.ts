@@ -16,11 +16,10 @@ export interface MaterializeV3HealthScoreResult {
 
 type SignalSeverity = 'none' | 'info' | 'warning' | 'critical';
 
-interface SeverityCountMap {
-    none: number;
-    info: number;
-    warning: number;
-    critical: number;
+interface SignalRow {
+    signal_key: string;
+    severity: SignalSeverity;
+    evidence: Record<string, unknown> | null;
 }
 
 function clampScore(value: number): number {
@@ -34,13 +33,21 @@ function toSeverity(value: unknown): SignalSeverity {
     return 'none';
 }
 
-function buildScoreFromSeverities(severities: SignalSeverity[]): { score: number; counts: SeverityCountMap; total_penalty: number } {
-    const counts: SeverityCountMap = { none: 0, info: 0, warning: 0, critical: 0 };
-    for (const severity of severities) counts[severity] += 1;
+function penaltyFor(signal: SignalRow): number {
+    const weightByKey: Record<string, { warning: number; critical: number; info: number }> = {
+        no_sales_7d: { info: 6, warning: 20, critical: 40 },
+        cancellation_rate_spike: { info: 4, warning: 18, critical: 32 },
+        unanswered_questions_24h: { info: 3, warning: 12, critical: 22 },
+        active_claims_count: { info: 4, warning: 14, critical: 26 },
+        shipment_delay_risk: { info: 3, warning: 12, critical: 24 },
+    };
 
-    const total_penalty = counts.info * 5 + counts.warning * 20 + counts.critical * 40;
-    const score = clampScore(100 - total_penalty);
-    return { score, counts, total_penalty };
+    const weights = weightByKey[signal.signal_key];
+    if (!weights) return 0;
+    if (signal.severity === 'critical') return weights.critical;
+    if (signal.severity === 'warning') return weights.warning;
+    if (signal.severity === 'info') return weights.info;
+    return 0;
 }
 
 export async function materializeV3HealthScore(input: MaterializeV3HealthScoreInput): Promise<MaterializeV3HealthScoreResult> {
@@ -68,27 +75,54 @@ export async function materializeV3HealthScore(input: MaterializeV3HealthScoreIn
     if (snapshotErr) throw new Error(`[v3-health-score-writer] snapshot lookup failed: ${snapshotErr.message}`);
     if (!snapshotRow?.snapshot_id) throw new Error('[v3-health-score-writer] snapshot not found for run');
 
-    const { data: signalRows, error: signalsErr } = await supabaseAdmin
+    const { data: rawSignalRows, error: signalsErr } = await supabaseAdmin
         .from('v3_clinical_signals')
-        .select('signal_key, severity')
+        .select('signal_key, severity, evidence')
         .eq('tenant_id', tenant_id)
         .eq('store_id', store_id)
         .eq('run_id', run_id);
     if (signalsErr) throw new Error(`[v3-health-score-writer] signals lookup failed: ${signalsErr.message}`);
 
-    const signalSeverities = (signalRows ?? []).map((row) => toSeverity((row as { severity?: unknown }).severity));
-    const signalKeys = (signalRows ?? [])
-        .map((row) => (row as { signal_key?: string }).signal_key)
-        .filter((value): value is string => Boolean(value));
+    const businessSignalKeys = new Set([
+        'no_sales_7d',
+        'cancellation_rate_spike',
+        'unanswered_questions_24h',
+        'active_claims_count',
+        'shipment_delay_risk',
+    ]);
 
-    const scoreBuilt = buildScoreFromSeverities(signalSeverities);
+    const signalRows = (rawSignalRows ?? [])
+        .map((row) => {
+            const typed = row as { signal_key?: string; severity?: unknown; evidence?: Record<string, unknown> | null };
+            return {
+                signal_key: typed.signal_key ?? '',
+                severity: toSeverity(typed.severity),
+                evidence: typed.evidence ?? {},
+            } as SignalRow;
+        })
+        .filter((row) => businessSignalKeys.has(row.signal_key));
+
+    const penalties = signalRows
+        .filter((row) => row.severity !== 'none')
+        .map((row) => ({
+            signal_key: row.signal_key,
+            severity: row.severity,
+            penalty: penaltyFor(row),
+            evidence: row.evidence ?? {},
+        }));
+
+    const totalPenalty = penalties.reduce((acc, row) => acc + row.penalty, 0);
+    const score = clampScore(100 - totalPenalty);
+
     const score_payload: Record<string, unknown> = {
-        score_version: 'v3_health_score_v1',
+        score_version: 'v3_health_score_wave2_freeze_v1',
         run_id,
-        total_signals: signalSeverities.length,
-        severity_counts: scoreBuilt.counts,
-        penalty: scoreBuilt.total_penalty,
-        signal_keys: signalKeys,
+        snapshot_id: snapshotRow.snapshot_id,
+        formula: 'score = clamp(100 - sum(signal_penalties))',
+        penalties,
+        penalty_total: totalPenalty,
+        signal_keys: signalRows.map((s) => s.signal_key),
+        signal_count: signalRows.length,
     };
 
     const { data: existing, error: existingErr } = await supabaseAdmin
@@ -109,7 +143,7 @@ export async function materializeV3HealthScore(input: MaterializeV3HealthScoreIn
                 store_id,
                 run_id,
                 snapshot_id: snapshotRow.snapshot_id,
-                score: scoreBuilt.score,
+                score,
                 score_payload,
                 computed_at: new Date().toISOString(),
             },

@@ -19,6 +19,11 @@ export interface MaterializeV3SignalsResult {
     signals: V3SignalWriteResult[];
 }
 
+interface MetricsDailyRow {
+    metric_date: string;
+    metrics: Record<string, unknown> | null;
+}
+
 function asObject(value: unknown): Record<string, unknown> {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
         return value as Record<string, unknown>;
@@ -41,9 +46,28 @@ function minusDays(metricDate: string, days: number): string {
     return shifted.toISOString().slice(0, 10);
 }
 
+function sumMetric(rows: MetricsDailyRow[], key: string): number {
+    let total = 0;
+    for (const row of rows) {
+        const metrics = asObject(row.metrics);
+        total += asNumber(metrics[key]);
+    }
+    return total;
+}
+
+function maxMetric(rows: MetricsDailyRow[], key: string): number {
+    let current = 0;
+    for (const row of rows) {
+        const metrics = asObject(row.metrics);
+        current = Math.max(current, asNumber(metrics[key]));
+    }
+    return current;
+}
+
 export async function materializeV3ClinicalSignals(input: MaterializeV3SignalsInput): Promise<MaterializeV3SignalsResult> {
     const { tenant_id, store_id, run_id, metric_date } = input;
-    const windowStartDate = minusDays(metric_date, 6);
+    const windowStart7d = minusDays(metric_date, 6);
+    const windowStart3d = minusDays(metric_date, 2);
 
     const { data: metricsRow, error: metricsErr } = await supabaseAdmin
         .from('v3_metrics_daily')
@@ -56,60 +80,116 @@ export async function materializeV3ClinicalSignals(input: MaterializeV3SignalsIn
     if (metricsErr) throw new Error(`[v3-signals-writer] metrics lookup failed: ${metricsErr.message}`);
     if (!metricsRow?.snapshot_id) throw new Error('[v3-signals-writer] metrics row not found for metric_date');
 
-    const metrics = asObject(metricsRow.metrics);
-    const webhookCount = asNumber(metrics['source_webhook_events_1d']);
-    const domainCount = asNumber(metrics['source_domain_events_1d']);
-    const gap = Math.max(0, webhookCount - domainCount);
-
-    const { data: recentRows, error: recentErr } = await supabaseAdmin
+    const { data: rows7d, error: rows7dErr } = await supabaseAdmin
         .from('v3_metrics_daily')
-        .select('metrics')
+        .select('metric_date, metrics')
         .eq('tenant_id', tenant_id)
         .eq('store_id', store_id)
-        .gte('metric_date', windowStartDate)
-        .lte('metric_date', metric_date);
-    if (recentErr) throw new Error(`[v3-signals-writer] rolling 7d metrics lookup failed: ${recentErr.message}`);
+        .gte('metric_date', windowStart7d)
+        .lte('metric_date', metric_date)
+        .order('metric_date', { ascending: true });
+    if (rows7dErr) throw new Error(`[v3-signals-writer] rolling 7d metrics lookup failed: ${rows7dErr.message}`);
 
-    let ordersCreated7d = 0;
-    for (const row of recentRows ?? []) {
-        const rowMetrics = asObject((row as { metrics?: Record<string, unknown> | null }).metrics);
-        ordersCreated7d += asNumber(rowMetrics['orders_created_1d']);
-    }
+    const { data: rows3d, error: rows3dErr } = await supabaseAdmin
+        .from('v3_metrics_daily')
+        .select('metric_date, metrics')
+        .eq('tenant_id', tenant_id)
+        .eq('store_id', store_id)
+        .gte('metric_date', windowStart3d)
+        .lte('metric_date', metric_date)
+        .order('metric_date', { ascending: true });
+    if (rows3dErr) throw new Error(`[v3-signals-writer] rolling 3d metrics lookup failed: ${rows3dErr.message}`);
+
+    const typed7d = (rows7d ?? []) as MetricsDailyRow[];
+    const typed3d = (rows3d ?? []) as MetricsDailyRow[];
+
+    const salesPaid7d = sumMetric(typed7d, 'sales_paid_1d');
+    const domainEvents7d = sumMetric(typed7d, 'source_domain_events_1d');
+    const webhookEvents7d = sumMetric(typed7d, 'source_webhook_events_1d');
+    const activeDays7d = typed7d.filter((row) => {
+        const metrics = asObject(row.metrics);
+        return asNumber(metrics['source_domain_events_1d']) > 0 || asNumber(metrics['source_webhook_events_1d']) > 0;
+    }).length;
+
+    const ordersCreated3d = sumMetric(typed3d, 'orders_created_1d');
+    const ordersCancelled3d = sumMetric(typed3d, 'orders_cancelled_1d');
+    const cancellationRate3d = ordersCreated3d > 0 ? ordersCancelled3d / ordersCreated3d : 0;
+
+    const currentMetrics = asObject(metricsRow.metrics);
+    const unansweredQuestions24h = asNumber(currentMetrics['unanswered_questions_24h_count_1d']);
+    const activeClaims = asNumber(currentMetrics['active_claims_count_1d']);
+    const shipmentsAtRisk = asNumber(currentMetrics['shipments_at_risk_count_1d']);
+    const shipmentsDelayed = asNumber(currentMetrics['shipments_delayed_1d']);
+
+    const noSalesGuard = activeDays7d >= 3 && (domainEvents7d + webhookEvents7d) >= 10;
 
     const candidates: Array<{
         signal_key: string;
         severity: 'none' | 'info' | 'warning' | 'critical';
         evidence: Record<string, unknown>;
     }> = [
-            {
-                signal_key: 'source_webhook_events_1d_zero',
-                severity: webhookCount === 0 ? 'warning' : 'none',
-                evidence: {
-                    metric_date,
-                    source_webhook_events_1d: webhookCount,
-                },
+        {
+            signal_key: 'no_sales_7d',
+            severity: noSalesGuard && salesPaid7d === 0 ? 'critical' : 'none',
+            evidence: {
+                metric_date,
+                window_days: 7,
+                sales_paid_7d: salesPaid7d,
+                source_domain_events_7d: domainEvents7d,
+                source_webhook_events_7d: webhookEvents7d,
+                active_days_7d: activeDays7d,
+                guardrails_passed: noSalesGuard,
             },
-            {
-                signal_key: 'source_domain_events_lag_1d',
-                severity: gap <= 0 ? 'none' : (gap >= 5 ? 'critical' : 'warning'),
-                evidence: {
-                    metric_date,
-                    source_webhook_events_1d: webhookCount,
-                    source_domain_events_1d: domainCount,
-                    lag_count_1d: gap,
-                },
+        },
+        {
+            signal_key: 'cancellation_rate_spike',
+            severity: ordersCreated3d < 10
+                ? 'none'
+                : (cancellationRate3d >= 0.4 ? 'critical' : (cancellationRate3d >= 0.25 ? 'warning' : 'none')),
+            evidence: {
+                metric_date,
+                window_days: 3,
+                orders_created_3d: ordersCreated3d,
+                orders_cancelled_3d: ordersCancelled3d,
+                cancellation_rate_3d: Number(cancellationRate3d.toFixed(4)),
+                min_orders_guard: 10,
             },
-            {
-                signal_key: 'no_orders_7d',
-                severity: ordersCreated7d === 0 ? 'critical' : 'none',
-                evidence: {
-                    metric_date,
-                    window_days: 7,
-                    window_start_date: windowStartDate,
-                    orders_created_7d: ordersCreated7d,
-                },
+        },
+        {
+            signal_key: 'unanswered_questions_24h',
+            severity: unansweredQuestions24h >= 8 ? 'critical' : (unansweredQuestions24h >= 3 ? 'warning' : 'none'),
+            evidence: {
+                metric_date,
+                unanswered_questions_24h_count: unansweredQuestions24h,
+                warning_threshold: 3,
+                critical_threshold: 8,
             },
-        ];
+        },
+        {
+            signal_key: 'active_claims_count',
+            severity: activeClaims >= 5 ? 'critical' : (activeClaims >= 2 ? 'warning' : 'none'),
+            evidence: {
+                metric_date,
+                active_claims_count: activeClaims,
+                warning_threshold: 2,
+                critical_threshold: 5,
+            },
+        },
+        {
+            signal_key: 'shipment_delay_risk',
+            severity: (shipmentsAtRisk >= 8 || shipmentsDelayed >= 4)
+                ? 'critical'
+                : ((shipmentsAtRisk >= 3 || shipmentsDelayed >= 2) ? 'warning' : 'none'),
+            evidence: {
+                metric_date,
+                shipments_at_risk_count: shipmentsAtRisk,
+                shipments_delayed_1d: shipmentsDelayed,
+                warning_threshold_at_risk: 3,
+                critical_threshold_at_risk: 8,
+                fallback_rule: 'uses delayed_or_stale_pending_when_deadline_missing',
+            },
+        },
+    ];
 
     const signalKeys = candidates
         .filter((c) => c.severity !== 'none')

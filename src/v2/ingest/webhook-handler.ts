@@ -105,7 +105,14 @@ export async function handleMeliWebhook(rawPayload: unknown): Promise<HandlerRes
 
     // Dual-write temporal: V2 sigue siendo el endpoint productivo mientras V3 recibe tráfico real.
     try {
-        await adaptMeliWebhookToV3(rawPayload as Record<string, unknown>);
+        const dualWrite = await adaptMeliWebhookToV3(rawPayload as Record<string, unknown>);
+        console.info('[webhook-handler] V3 dual-write ok:', {
+            webhook_event_id: dualWrite.webhook_event_id,
+            created: dualWrite.created,
+            tenant_id: dualWrite.tenant_id,
+            store_id: dualWrite.store_id,
+            identity_source: dualWrite.identity_source,
+        });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.error('[webhook-handler] V3 dual-write failed:', { message });

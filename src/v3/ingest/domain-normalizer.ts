@@ -23,16 +23,63 @@ function asString(value: unknown, fallback: string): string {
     return typeof value === 'string' && value.trim() ? value.trim() : fallback;
 }
 
+function normalizedStatus(payload: Record<string, unknown>): string {
+    const statusCandidates = [
+        payload['status'],
+        payload['sub_status'],
+        payload['order_status'],
+        payload['payment_status'],
+        payload['shipping_status'],
+        payload['claim_status'],
+        payload['question_status'],
+    ];
+
+    for (const value of statusCandidates) {
+        const parsed = asString(value, '').toLowerCase();
+        if (parsed) return parsed;
+    }
+
+    return '';
+}
+
 function inferEventType(providerKey: WebhookRow['provider_key'], payload: Record<string, unknown>): string {
     const explicit = asString(payload['event_type'], '');
     if (explicit) return explicit;
     if (providerKey !== 'mercadolibre') return 'unknown.event';
 
-    const topic = asString(payload['topic'], '');
-    if (topic === 'orders_v2') return 'order.created';
-    if (topic === 'questions') return 'message.received';
-    if (topic === 'claims') return 'claim.opened';
-    if (topic === 'payments') return 'payment.updated';
+    const topic = asString(payload['topic'], '').toLowerCase();
+    const status = normalizedStatus(payload);
+    const action = asString(payload['action'], '').toLowerCase();
+    const resource = asString(payload['resource'], '').toLowerCase();
+
+    if (topic === 'orders_v2') {
+        if (status.includes('cancel') || action.includes('cancel')) return 'order.cancelled';
+        if (status === 'paid' || status === 'payment_required' || action.includes('paid')) return 'order.paid';
+        return 'order.created';
+    }
+
+    if (topic === 'questions') {
+        if (status.includes('answered') || action.includes('answer')) return 'question.answered';
+        return 'question.received';
+    }
+
+    if (topic === 'claims') {
+        if (status.includes('close') || status.includes('resolved') || action.includes('close')) return 'claim.closed';
+        return 'claim.opened';
+    }
+
+    if (topic === 'payments') {
+        if (status.includes('approved') || status === 'accredited') return 'payment.approved';
+        if (status.includes('cancel') || status.includes('reject') || status.includes('refun')) return 'payment.failed';
+        return 'payment.updated';
+    }
+
+    if (topic === 'shipments') {
+        if (status.includes('delay') || status.includes('late') || action.includes('delay')) return 'shipment.delayed';
+        return 'shipment.updated';
+    }
+
+    if (resource.includes('/shipments/')) return 'shipment.updated';
     return 'unknown.event';
 }
 
@@ -42,7 +89,12 @@ function inferEntityType(payload: Record<string, unknown>): string {
 
     const resource = asString(payload['resource'], '');
     const parts = resource.split('/').filter(Boolean);
-    return parts[0] ?? 'unknown';
+    const inferred = parts[0] ?? 'unknown';
+    if (inferred === 'questions') return 'question';
+    if (inferred === 'claims') return 'claim';
+    if (inferred === 'shipments') return 'shipment';
+    if (inferred === 'orders') return 'order';
+    return inferred;
 }
 
 function inferEntityId(sourceEventId: string, payload: Record<string, unknown>): string {
