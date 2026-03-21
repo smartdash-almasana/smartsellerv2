@@ -2,10 +2,11 @@ export type DashboardBootstrapStatus = 'pending' | 'running' | 'completed' | 'fa
 
 export function getNoScoreBootstrapMessage(bootstrapStatus: DashboardBootstrapStatus): string {
     if (bootstrapStatus === 'pending' || bootstrapStatus === 'running') {
-        return 'Bootstrap inicial en progreso. El score aparecerá al finalizar.';
+        return 'Carga inicial en progreso. El score aparecerá al finalizar.';
     }
     if (bootstrapStatus === 'failed') {
-        return 'Bootstrap inicial falló. Se reintentará en background.';
+        return 'La carga inicial falló. Se reintentará en segundo plano.';
     }
-    return 'Sin score calculado aún. Bootstrap inicial todavía no se inició.';
+    return 'Todavia no hay score calculado. La carga inicial aun no comenzó.';
 }
+

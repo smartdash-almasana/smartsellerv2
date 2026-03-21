@@ -34,33 +34,33 @@ type BootstrapRow = {
 };
 
 function bandFromScore(score: number): string {
-    if (score >= 85) return "Saludable";
-    if (score >= 60) return "En observacion";
-    return "Atencion prioritaria";
+    if (score >= 85) return "En orden";
+    if (score >= 60) return "Bajo revision";
+    return "Prioridad alta";
 }
 
 function signalLabel(signalKey: string): string {
-    if (signalKey === "no_orders_7d") return "Ritmo comercial en pausa";
+    if (signalKey === "no_orders_7d") return "Sin ventas recientes";
     if (signalKey === "cancellation_spike") return "Suba de cancelaciones";
     if (signalKey === "unanswered_messages_spike") return "Mensajes sin respuesta";
     if (signalKey === "claims_opened") return "Reclamos activos";
-    if (signalKey === "low_activity_14d") return "Actividad por debajo de lo esperado";
-    return "Alerta clinica activa";
+    if (signalKey === "low_activity_14d") return "Actividad comercial por debajo de lo esperado";
+    return "Alerta operativa activa";
 }
 
 function signalAction(signalKey: string): string {
-    if (signalKey === "no_orders_7d") return "Revisar publicaciones activas y demanda de los ultimos dias.";
-    if (signalKey === "cancellation_spike") return "Revisar cancelaciones recientes y validar stock o promesa de entrega.";
-    if (signalKey === "unanswered_messages_spike") return "Priorizar respuesta de bandeja para evitar demora con compradores.";
-    if (signalKey === "claims_opened") return "Revisar reclamos abiertos y avanzar con resolucion hoy.";
-    if (signalKey === "low_activity_14d") return "Revisar visibilidad comercial antes de tomar una nueva accion.";
+    if (signalKey === "no_orders_7d") return "Revisar publicaciones activas, precio y demanda reciente.";
+    if (signalKey === "cancellation_spike") return "Revisar cancelaciones recientes y validar stock o tiempos de despacho.";
+    if (signalKey === "unanswered_messages_spike") return "Priorizar respuesta de mensajes para evitar demoras con compradores.";
+    if (signalKey === "claims_opened") return "Revisar reclamos abiertos y avanzar con la resolucion hoy.";
+    if (signalKey === "low_activity_14d") return "Revisar visibilidad y ritmo comercial antes de actuar.";
     return "Revisar esta alerta con el equipo operativo.";
 }
 
 function severityLabel(severity: DashboardSignal["severity"]): string {
-    if (severity === "critical") return "Alta severidad";
-    if (severity === "warning") return "Media severidad";
-    return "Baja severidad";
+    if (severity === "critical") return "Alta prioridad";
+    if (severity === "warning") return "Prioridad media";
+    return "Prioridad baja";
 }
 
 function severityTone(severity: DashboardSignal["severity"]): string {
@@ -266,7 +266,7 @@ export default async function DashboardPrincipalPage({
 
                         <div className="space-y-3">
                             <div>
-                                <h1 className="text-3xl font-black tracking-tight lg:text-4xl">Salud Clinica General</h1>
+                                <h1 className="text-3xl font-black tracking-tight lg:text-4xl">Estado general de la tienda</h1>
                                 <p className="mt-1 text-sm text-slate-300">{currentStore?.display_name ?? store_id}</p>
                             </div>
 
@@ -289,7 +289,7 @@ export default async function DashboardPrincipalPage({
                                 </>
                             ) : (
                                 <div className="rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                                    <p className="font-bold">Sistema en calibracion inicial</p>
+                                    <p className="font-bold">Carga inicial en progreso</p>
                                     <p className="mt-1 text-slate-300">{calibrationMessage}</p>
                                 </div>
                             )}
@@ -297,16 +297,16 @@ export default async function DashboardPrincipalPage({
                     </div>
 
                     <div className="space-y-3 border-t border-white/10 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-                        <h2 className="text-2xl font-black tracking-tight">Resumen Ejecutivo</h2>
+                        <h2 className="text-2xl font-black tracking-tight">Resumen operativo</h2>
                         {scoreData ? (
                             <div className="space-y-2 text-sm leading-7 text-slate-200">
                                 <p>Score actual: {scoreData.score} puntos.</p>
-                                <p>Señales activas registradas: {activeSignals.length}.</p>
+                                <p>Alertas activas registradas: {activeSignals.length}.</p>
                                 <p>Ultimo calculo: {new Date(scoreData.computed_at).toLocaleString()}.</p>
                             </div>
                         ) : (
                             <div className="space-y-2 text-sm leading-7 text-slate-200">
-                                <p>Sistema en calibracion inicial.</p>
+                                <p>Carga inicial en progreso.</p>
                                 <p>{calibrationMessage}</p>
                             </div>
                         )}
@@ -319,8 +319,8 @@ export default async function DashboardPrincipalPage({
                     <section className="space-y-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <h2 className="text-3xl font-black tracking-tight text-slate-900">Que hacer ahora</h2>
-                                <p className="mt-1 text-sm text-slate-600">Acciones disponibles solo cuando hay señales clinicas reales.</p>
+                                <h2 className="text-3xl font-black tracking-tight text-slate-900">Que revisar ahora</h2>
+                                <p className="mt-1 text-sm text-slate-600">Acciones disponibles solo cuando hay señales reales de la cuenta.</p>
                             </div>
                             <SyncButton storeId={store_id} />
                         </div>
@@ -348,7 +348,7 @@ export default async function DashboardPrincipalPage({
                         ) : (
                             <div className="rounded-[24px] border border-slate-200 bg-white p-6 text-sm font-medium text-slate-600 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
                                 {scoreData
-                                    ? "Todavia no hay evidencia suficiente para mostrar prioridades clinicas."
+                                    ? "Todavia no hay evidencia suficiente para mostrar prioridades operativas."
                                     : calibrationMessage}
                             </div>
                         )}
@@ -356,7 +356,7 @@ export default async function DashboardPrincipalPage({
 
                     <section className="space-y-4">
                         <div>
-                            <h2 className="text-3xl font-black tracking-tight text-slate-900">Alertas Clinicas Activas</h2>
+                            <h2 className="text-3xl font-black tracking-tight text-slate-900">Alertas operativas activas</h2>
                             <p className="mt-1 text-sm text-slate-600">Se muestran solo señales reales registradas por el motor actual.</p>
                         </div>
 
@@ -396,7 +396,7 @@ export default async function DashboardPrincipalPage({
                                                 href={`/dashboard/${store_id}/alerts`}
                                                 className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
                                             >
-                                                Ver centro de alertas
+                                                Ver alertas
                                             </Link>
                                         </div>
                                     </article>
@@ -405,7 +405,7 @@ export default async function DashboardPrincipalPage({
                         ) : (
                             <div className="rounded-[24px] border border-slate-200 bg-white p-6 text-sm font-medium text-slate-600 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
                                 {scoreData
-                                    ? "No detectamos alertas clinicas activas en este momento."
+                                    ? "No detectamos alertas operativas activas en este momento."
                                     : "Se activara cuando haya señales reales disponibles."}
                             </div>
                         )}
@@ -416,7 +416,7 @@ export default async function DashboardPrincipalPage({
                     <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
                         <div className="mb-5 flex items-center justify-between">
                             <div>
-                                <h2 className="text-2xl font-black tracking-tight text-slate-900">Areas Vitales</h2>
+                                <h2 className="text-2xl font-black tracking-tight text-slate-900">Rendimiento por area</h2>
                                 <p className="text-sm text-slate-600">Lecturas reales desde metricas diarias.</p>
                             </div>
                             <Link href={`/dashboard/${store_id}/vital-signs`} className="rounded-full bg-slate-100 p-2 text-slate-700 transition hover:bg-slate-200">
@@ -436,7 +436,7 @@ export default async function DashboardPrincipalPage({
                             </div>
                         ) : (
                             <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                                Sin lectura suficiente para mostrar areas vitales todavia.
+                                Todavia no hay lectura suficiente para mostrar areas operativas.
                             </div>
                         )}
                     </section>
@@ -444,7 +444,7 @@ export default async function DashboardPrincipalPage({
                     <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
                         <div className="mb-4 flex items-center justify-between">
                             <div>
-                                <h2 className="text-2xl font-black tracking-tight text-slate-900">Evolucion Clinica</h2>
+                                <h2 className="text-2xl font-black tracking-tight text-slate-900">Evolucion del rendimiento</h2>
                                 <p className="text-sm text-slate-600">Serie real de scores calculados.</p>
                             </div>
                             <Link href={`/dashboard/${store_id}/evolution`} className="rounded-full bg-slate-100 p-2 text-slate-700 transition hover:bg-slate-200">
@@ -460,12 +460,12 @@ export default async function DashboardPrincipalPage({
                                     </svg>
                                 </div>
                                 <p className="mt-4 text-center text-sm font-medium text-slate-600">
-                                    Ultimas {sparklineScores.length} mediciones registradas.
+                                    Ultimos {sparklineScores.length} scores registrados.
                                 </p>
                             </>
                         ) : (
                             <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                                Sistema en calibracion inicial. La evolucion resumida se activara cuando exista serie real de scores.
+                                Carga inicial en progreso. La evolucion resumida se activara cuando exista una serie real de scores.
                             </div>
                         )}
                     </section>

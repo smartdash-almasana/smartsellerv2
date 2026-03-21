@@ -157,12 +157,12 @@ export async function materializeV3ClinicalSignals(input: MaterializeV3SignalsIn
         },
         {
             signal_key: 'unanswered_questions_24h',
-            severity: unansweredQuestions24h >= 8 ? 'critical' : (unansweredQuestions24h >= 3 ? 'warning' : 'none'),
+            severity: unansweredQuestions24h >= 3 ? 'critical' : (unansweredQuestions24h >= 1 ? 'warning' : 'none'),
             evidence: {
                 metric_date,
                 unanswered_questions_24h_count: unansweredQuestions24h,
-                warning_threshold: 3,
-                critical_threshold: 8,
+                warning_threshold: 1,
+                critical_threshold: 3,
             },
         },
         {

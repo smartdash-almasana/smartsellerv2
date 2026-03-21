@@ -37,18 +37,18 @@ export type AreaSignal = {
 };
 
 function signalLabel(signalKey: string): string {
-    if (signalKey === "no_orders_7d") return "Ritmo comercial en pausa";
+    if (signalKey === "no_orders_7d") return "Sin ventas recientes";
     if (signalKey === "cancellation_spike") return "Suba de cancelaciones";
     if (signalKey === "unanswered_messages_spike") return "Mensajes sin respuesta";
     if (signalKey === "claims_opened") return "Reclamos activos";
-    if (signalKey === "low_activity_14d") return "Actividad por debajo de lo esperado";
-    return "Alerta clinica activa";
+    if (signalKey === "low_activity_14d") return "Actividad comercial por debajo de lo esperado";
+    return "Alerta operativa activa";
 }
 
 function severityLabel(severity: AreaSignal["severity"]): string {
-    if (severity === "critical") return "ALTA";
-    if (severity === "warning") return "MEDIA";
-    return "BAJA";
+    if (severity === "critical") return "ALTA PRIORIDAD";
+    if (severity === "warning") return "PRIORIDAD MEDIA";
+    return "PRIORIDAD BAJA";
 }
 
 function evidenceLabel(key: string): string {
@@ -161,8 +161,8 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
     return (
         <div className="flex flex-col gap-6 lg:flex-row">
             <aside className="w-full rounded-[28px] bg-[#0f2347] p-5 text-white shadow-[0_24px_60px_rgba(15,35,71,0.24)] lg:w-72">
-                <h1 className="mt-2 text-4xl font-black tracking-tight">Signos Vitales</h1>
-                <p className="mt-2 text-sm leading-7 text-slate-200">Lectura por area, patologias activas e historial de intervenciones.</p>
+                <h1 className="mt-2 text-4xl font-black tracking-tight">Rendimiento por area</h1>
+                <p className="mt-2 text-sm leading-7 text-slate-200">Lectura por area, alertas activas e historial de acciones.</p>
 
                 <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
                     {AREAS.map((area) => {
@@ -191,8 +191,8 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                         <div className="flex flex-col gap-5">
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
-                                    <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">Area Vital</p>
-                                    <h2 className="text-4xl font-black tracking-tight text-[#0f2347]">{selectedAreaLabel} - Signos Vitales</h2>
+                                    <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">Area operativa</p>
+                                    <h2 className="text-4xl font-black tracking-tight text-[#0f2347]">{selectedAreaLabel} - Rendimiento por area</h2>
                                 </div>
                                 <svg viewBox="0 0 180 52" className="h-10 w-40 text-[#0f2347]">
                                     <path d="M2 28 H28 L38 8 L48 42 L58 20 H90 L100 5 L110 45 L120 28 H178" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
@@ -219,7 +219,7 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                                 </div>
                             ) : (
                                 <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
-                                    Sin lectura suficiente para mostrar indicadores reales de {selectedAreaLabel.toLowerCase()}.
+                                    Todavia no hay datos suficientes para mostrar indicadores reales de {selectedAreaLabel.toLowerCase()}.
                                 </div>
                             )}
                         </div>
@@ -227,13 +227,13 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                 </section>
 
                 <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-                    <div className="bg-[#0f2347] px-5 py-4 text-lg font-black tracking-tight text-white">Patologias Activas</div>
+                    <div className="bg-[#0f2347] px-5 py-4 text-lg font-black tracking-tight text-white">Alertas activas</div>
                     {areaSignals.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-left">
                                 <thead className="border-b border-slate-200 bg-slate-50 text-sm font-black text-slate-700">
                                     <tr>
-                                        <th className="px-5 py-4">Diagnostico</th>
+                                        <th className="px-5 py-4">Alerta</th>
                                         <th className="px-5 py-4">Severidad</th>
                                         <th className="px-5 py-4">Lectura Actual</th>
                                     </tr>
@@ -261,21 +261,21 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                         </div>
                     ) : (
                         <div className="px-5 py-5 text-sm text-slate-600">
-                            No hay patologias activas con evidencia suficiente para {selectedAreaLabel.toLowerCase()}.
+                            No hay alertas activas con evidencia suficiente para {selectedAreaLabel.toLowerCase()}.
                         </div>
                     )}
                 </section>
 
                 <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-                    <div className="bg-[#0f2347] px-5 py-4 text-lg font-black tracking-tight text-white">Historial de Intervenciones</div>
+                    <div className="bg-[#0f2347] px-5 py-4 text-lg font-black tracking-tight text-white">Historial de acciones</div>
                     <div className="p-6">
                         {hasPanelData ? (
                             <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
-                                Todavia no hay historial de intervenciones reales registradas para {selectedAreaLabel.toLowerCase()}.
+                                Todavia no hay historial de acciones reales registradas para {selectedAreaLabel.toLowerCase()}.
                             </div>
                         ) : (
                             <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
-                                Sistema en calibracion inicial para {selectedAreaLabel.toLowerCase()}. Se activara cuando existan registros reales.
+                                Carga inicial en progreso para {selectedAreaLabel.toLowerCase()}. Se activara cuando existan registros reales.
                             </div>
                         )}
                     </div>

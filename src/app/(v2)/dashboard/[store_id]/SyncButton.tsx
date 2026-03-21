@@ -26,18 +26,18 @@ interface SyncButtonProps {
 }
 
 function signalLabel(signalKey: string): string {
-    if (signalKey === 'no_orders_7d') return 'Ritmo comercial en pausa';
+    if (signalKey === 'no_orders_7d') return 'Sin ventas recientes';
     if (signalKey === 'cancellation_spike') return 'Suba de cancelaciones';
     if (signalKey === 'unanswered_messages_spike') return 'Mensajes sin respuesta';
     if (signalKey === 'claims_opened') return 'Reclamos activos';
-    if (signalKey === 'low_activity_14d') return 'Actividad por debajo de lo esperado';
+    if (signalKey === 'low_activity_14d') return 'Actividad comercial por debajo de lo esperado';
     return 'Alerta operativa activa';
 }
 
 function severityLabel(severity: 'info' | 'warning' | 'critical'): string {
-    if (severity === 'critical') return 'Critica';
-    if (severity === 'warning') return 'Advertencia';
-    return 'Informativa';
+    if (severity === 'critical') return 'Alta prioridad';
+    if (severity === 'warning') return 'Prioridad media';
+    return 'Prioridad baja';
 }
 
 function briefEvidence(evidence: Record<string, unknown>): string {
@@ -108,7 +108,7 @@ export default function SyncButton({ storeId }: SyncButtonProps) {
                     syncing ? 'bg-slate-400' : 'bg-[#0f2347] hover:bg-[#0b1b38]'
                 }`}
             >
-                {syncing ? 'Sincronizando...' : 'Sincronizar ahora'}
+                {syncing ? 'Sincronizando...' : 'Actualizar ahora'}
             </button>
 
             {error && (
@@ -119,7 +119,7 @@ export default function SyncButton({ storeId }: SyncButtonProps) {
 
             {syncResult && (
                 <div className="mt-3 rounded-[20px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-slate-700 shadow-sm">
-                    <p className="font-black text-slate-900">Sincronizacion completada</p>
+                    <p className="font-black text-slate-900">Actualizacion completada</p>
                     <ul className="mt-3 space-y-1">
                         <li>Ordenes sincronizadas: <strong>{syncResult.fetched_orders}</strong></li>
                         <li>Eventos nuevos: <strong>{syncResult.inserted_webhooks}</strong></li>
@@ -130,13 +130,13 @@ export default function SyncButton({ storeId }: SyncButtonProps) {
 
             {score && (
                 <div className="mt-3 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-slate-700 shadow-sm">
-                    <p className="font-black text-slate-900">Chequeo actualizado</p>
+                    <p className="font-black text-slate-900">Lectura actualizada</p>
                     <p className="mt-2">Score actual: <strong>{score.score}</strong> / 100</p>
                     <p>Calculado: <strong>{new Date(score.computed_at).toLocaleString()}</strong></p>
                     <div className="mt-4">
-                        <p className="font-black text-slate-900">Estado clinico</p>
+                        <p className="font-black text-slate-900">Estado operativo</p>
                         {(score.active_signals ?? []).length === 0 ? (
-                            <p className="mt-2 text-slate-600">No hay alertas clinicas activas.</p>
+                            <p className="mt-2 text-slate-600">No hay alertas operativas activas.</p>
                         ) : (
                             <ul className="mt-2 space-y-2">
                                 {(score.active_signals ?? []).map((signal) => (

@@ -14,7 +14,7 @@ const SIGNAL_KEYS = [
 type SignalKey = typeof SIGNAL_KEYS[number];
 
 const SIGNAL_LABELS: Record<SignalKey, string> = {
-    no_orders_7d: 'Sin órdenes (7 días)',
+    no_orders_7d: 'Sin ventas (7 días)',
     cancellation_spike: 'Pico de cancelaciones',
     unanswered_messages_spike: 'Mensajes sin respuesta',
     claims_opened: 'Reclamos abiertos',
@@ -24,7 +24,7 @@ const SIGNAL_LABELS: Record<SignalKey, string> = {
 const THRESHOLD_FIELDS: Record<SignalKey, Array<{ key: string; label: string; min: number; max: number; step: number }>> = {
     no_orders_7d: [
         { key: 'window_days', label: 'Ventana (días)', min: 1, max: 30, step: 1 },
-        { key: 'min_orders', label: 'Min. órdenes esperadas', min: 0, max: 999, step: 1 },
+        { key: 'min_orders', label: 'Min. ventas esperadas', min: 0, max: 999, step: 1 },
     ],
     cancellation_spike: [
         { key: 'window_days', label: 'Ventana (días)', min: 1, max: 30, step: 1 },
@@ -33,7 +33,7 @@ const THRESHOLD_FIELDS: Record<SignalKey, Array<{ key: string; label: string; mi
     ],
     unanswered_messages_spike: [
         { key: 'window_days', label: 'Ventana (días)', min: 1, max: 30, step: 1 },
-        { key: 'min_pending', label: 'Min. mensajes sin responder', min: 1, max: 999, step: 1 },
+        { key: 'min_pending', label: 'Min. mensajes pendientes', min: 1, max: 999, step: 1 },
     ],
     claims_opened: [
         { key: 'window_days', label: 'Ventana (días)', min: 1, max: 30, step: 1 },
@@ -173,32 +173,32 @@ export default function PolicyPanel({ storeId }: { storeId: string }) {
         });
     }
 
-    if (loading) return <p style={{ color: '#64748b', fontSize: 13, marginTop: 12 }}>Cargando política…</p>;
+    if (loading) return <p style={{ color: '#64748b', fontSize: 13, marginTop: 12 }}>Cargando configuración…</p>;
     if (!policy) return null;
 
     return (
         <div style={{ marginTop: 32 }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', marginBottom: 4 }}>
-                Alertas y notificaciones
+                Alertas y prioridades
             </h2>
             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
-                Configura reglas por señal clínica. {policy.policy_id ? 'Política guardada.' : 'Mostrando configuración por defecto.'}
+                Configura reglas por señal operativa. {policy.policy_id ? 'Configuración guardada.' : 'Mostrando configuración por defecto.'}
             </p>
 
             {/* Global enable */}
             <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 14 }}>
                 <Toggle checked={policy.enabled} onChange={v => setPolicy(p => p ? { ...p, enabled: v } : p)} />
                 <div>
-                    <span style={{ fontWeight: 600, fontSize: 14 }}>Alertas globales</span>
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>Prioridad general</span>
                     <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>
-                        {policy.enabled ? 'Activas — las reglas configuradas abajo aplican' : 'Desactivadas — ninguna alerta se enviará'}
+                        {policy.enabled ? 'Activas — las reglas configuradas abajo aplican' : 'Desactivadas — no se enviara ninguna alerta'}
                     </p>
                 </div>
             </div>
 
             {/* Channels */}
             <div style={card}>
-                <span style={{ ...label, marginBottom: 10 }}>Canales de notificación</span>
+                <span style={{ ...label, marginBottom: 10 }}>Canales de notificacion</span>
                 <div style={{ display: 'flex', gap: 24 }}>
                     {(['whatsapp', 'telegram', 'email'] as const).map(ch => (
                         <label key={ch} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
@@ -277,7 +277,7 @@ export default function PolicyPanel({ storeId }: { storeId: string }) {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                                     {/* Severity override */}
                                     <div>
-                                        <span style={label}>Severidad override</span>
+                                        <span style={label}>Prioridad manual</span>
                                         <select
                                             style={selectStyle}
                                             value={rule.severity_override ?? ''}
@@ -285,10 +285,10 @@ export default function PolicyPanel({ storeId }: { storeId: string }) {
                                                 severity_override: (e.target.value || null) as null | 'low' | 'medium' | 'high',
                                             })}
                                         >
-                                            <option value="">Default (del motor)</option>
-                                            <option value="low">Low</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="high">High</option>
+                                            <option value="">Predeterminada (motor)</option>
+                                            <option value="low">Baja</option>
+                                            <option value="medium">Media</option>
+                                            <option value="high">Alta</option>
                                         </select>
                                     </div>
                                     {/* Cooldown */}
@@ -344,7 +344,7 @@ export default function PolicyPanel({ storeId }: { storeId: string }) {
                         fontWeight: 600, fontSize: 14,
                     }}
                 >
-                    {saving ? 'Guardando…' : 'Guardar política'}
+                    {saving ? 'Guardando…' : 'Guardar configuración'}
                 </button>
             </div>
 

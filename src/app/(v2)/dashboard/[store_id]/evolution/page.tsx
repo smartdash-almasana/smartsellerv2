@@ -9,10 +9,10 @@ export default function EvolutionPage() {
     const [timeRange, setTimeRange] = useState<(typeof FILTERS)[number]>("90D");
 
     const milestones = [
-        { date: "May 10", title: "Optimizacion de Campana", detail: "Ajuste de ROI", icon: Settings, tone: "bg-[#d06b2d]" },
-        { date: "Jun 05", title: "Soporte Prioritario", detail: "Resolucion Rapida", icon: ShieldCheck, tone: "bg-[#2463eb]" },
-        { date: "Jun 20", title: "Ajuste de Precios", detail: "Competitividad", icon: Wrench, tone: "bg-[#c45f2b]" },
-        { date: "Jul 12", title: "Auditoria de Cuenta", detail: "Limpieza de Listados", icon: TrendingUp, tone: "bg-[#0f2347]" },
+        { date: "May 10", title: "Optimizacion de publicaciones", detail: "Mejor visibilidad", icon: Settings, tone: "bg-[#d06b2d]" },
+        { date: "Jun 05", title: "Soporte prioritario", detail: "Resolucion rapida", icon: ShieldCheck, tone: "bg-[#2463eb]" },
+        { date: "Jun 20", title: "Ajuste de precios", detail: "Competitividad", icon: Wrench, tone: "bg-[#c45f2b]" },
+        { date: "Jul 12", title: "Revision de cuenta", detail: "Limpieza de publicaciones", icon: TrendingUp, tone: "bg-[#0f2347]" },
     ];
 
     return (
@@ -20,22 +20,22 @@ export default function EvolutionPage() {
             <section className="rounded-[28px] bg-[#0f2347] px-6 py-7 text-white shadow-[0_24px_60px_rgba(15,35,71,0.24)]">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                        <h1 className="mt-2 text-4xl font-black tracking-tight">Evolucion Clinica</h1>
+                        <h1 className="mt-2 text-4xl font-black tracking-tight">Evolucion del rendimiento</h1>
                         <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-200">
-                            Lectura historica del score, delta reciente y hitos aplicados para sostener la cuenta en trayectoria positiva.
+                            Seguimiento historico del score, cambios recientes y hitos aplicados para sostener el negocio en una trayectoria estable.
                         </p>
                     </div>
 
                     <div className="grid gap-3 rounded-[24px] border border-white/10 bg-white/5 p-3 sm:grid-cols-2">
                         <div className="rounded-[20px] bg-white px-5 py-4 text-[#0f2347]">
-                            <p className="text-sm font-semibold text-slate-500">Score Actual</p>
+                            <p className="text-sm font-semibold text-slate-500">Score actual</p>
                             <div className="mt-2 flex items-end gap-3">
                                 <span className="text-5xl font-black tracking-tight">92</span>
-                                <span className="pb-2 text-lg font-bold text-slate-700">Excelente</span>
+                                <span className="pb-2 text-lg font-bold text-slate-700">En orden</span>
                             </div>
                         </div>
                         <div className="rounded-[20px] bg-white px-5 py-4 text-[#0f2347]">
-                            <p className="text-sm font-semibold text-slate-500">Delta</p>
+                            <p className="text-sm font-semibold text-slate-500">Variacion</p>
                             <div className="mt-2 flex items-center gap-2 text-[#0d8f95]">
                                 <span className="text-5xl font-black tracking-tight">+5.4</span>
                                 <ArrowUpRight className="h-8 w-8" />
@@ -48,8 +48,8 @@ export default function EvolutionPage() {
             <section className="space-y-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <h2 className="text-3xl font-black tracking-tight text-slate-900">Evolucion Clinica (Historial)</h2>
-                        <p className="mt-1 text-sm text-slate-600">Filtros de lectura ejecutiva para revisar tendencia y reaccion aplicada.</p>
+                        <h2 className="text-3xl font-black tracking-tight text-slate-900">Evolucion del rendimiento (historial)</h2>
+                        <p className="mt-1 text-sm text-slate-600">Filtros para revisar tendencia y accion aplicada.</p>
                     </div>
                     <div className="flex w-full gap-2 rounded-full bg-white p-2 shadow-[0_14px_30px_rgba(15,23,42,0.06)] sm:w-auto">
                         {FILTERS.map((filter) => (
@@ -68,7 +68,7 @@ export default function EvolutionPage() {
                 </div>
 
                 <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-                    <h3 className="mb-4 text-2xl font-black tracking-tight text-slate-900">Score de Salud a lo largo del tiempo</h3>
+                    <h3 className="mb-4 text-2xl font-black tracking-tight text-slate-900">Rendimiento a lo largo del tiempo</h3>
                     <div className="overflow-x-auto">
                         <div className="min-w-[720px] rounded-[22px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f4f9fe_100%)] p-4">
                             <svg viewBox="0 0 920 330" className="h-[320px] w-full">
@@ -106,7 +106,7 @@ export default function EvolutionPage() {
                 </div>
 
                 <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-                    <h3 className="mb-6 text-2xl font-black tracking-tight text-slate-900">Intervenciones Aplicadas</h3>
+                    <h3 className="mb-6 text-2xl font-black tracking-tight text-slate-900">Acciones aplicadas</h3>
                     <div className="overflow-x-auto">
                         <div className="min-w-[760px]">
                             <div className="relative h-16 rounded-full bg-[#0f2347] px-10">

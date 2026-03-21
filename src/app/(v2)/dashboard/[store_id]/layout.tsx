@@ -19,7 +19,7 @@ export default function DashboardLayout({
     const routeParams = useParams<{ store_id: string }>();
     const store_id = typeof routeParams?.store_id === "string" ? routeParams.store_id : "";
     const pathname = usePathname();
-    const [storeName, setStoreName] = useState("SmartSeller Principal");
+    const [storeName, setStoreName] = useState("Tienda principal");
 
     useEffect(() => {
         fetch("/api/me", { cache: "no-store" })
@@ -27,16 +27,16 @@ export default function DashboardLayout({
             .then((data) => {
                 const stores = Array.isArray(data?.stores) ? data.stores : [];
                 const store = stores.find((item: { store_id: string; display_name?: string }) => item.store_id === store_id);
-                setStoreName(store?.display_name ?? "SmartSeller Principal");
+                setStoreName(store?.display_name ?? "Tienda principal");
             })
-            .catch(() => setStoreName("SmartSeller Principal"));
+            .catch(() => setStoreName("Tienda principal"));
     }, [store_id]);
 
     const navItems: NavItem[] = [
         { name: "Dashboard", href: `/dashboard/${store_id}`, icon: Menu },
-        { name: "Areas Vitales", href: `/dashboard/${store_id}/vital-signs`, icon: Activity },
+        { name: "Rendimiento", href: `/dashboard/${store_id}/vital-signs`, icon: Activity },
         { name: "Evolucion", href: `/dashboard/${store_id}/evolution`, icon: TrendingUp },
-        { name: "Centro de Alertas", href: `/dashboard/${store_id}/alerts`, icon: Bell },
+        { name: "Alertas", href: `/dashboard/${store_id}/alerts`, icon: Bell },
     ];
 
     return (
