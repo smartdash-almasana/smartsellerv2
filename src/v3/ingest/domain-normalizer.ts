@@ -80,6 +80,14 @@ function inferEventType(providerKey: WebhookRow['provider_key'], payload: Record
     }
 
     if (resource.includes('/shipments/')) return 'shipment.updated';
+
+    if (topic === 'items' || topic === 'items_prices') {
+        if (topic === 'items_prices') return 'item.price_updated';
+        return 'item.updated';
+    }
+
+    if (topic.startsWith('vis_leads')) return 'lead.received';
+
     return 'unknown.event';
 }
 
