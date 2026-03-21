@@ -1,8 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/v3/worker/webhook-to-domain?limit=100&lease_seconds=300",
-      "schedule": "*/1 * * * *"
-    }
-  ]
-}
+{}
