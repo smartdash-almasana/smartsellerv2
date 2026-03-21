@@ -49,6 +49,11 @@ function validate(payload: unknown): MeliWebhookPayload {
     return p as unknown as MeliWebhookPayload;
 }
 
+function isDuplicateKeyError(error: unknown): boolean {
+    const code = (error as { code?: unknown } | null)?.code;
+    return code === '23505';
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 export async function handleMeliWebhook(rawPayload: unknown): Promise<HandlerResult> {
     // 1. Validate required fields
@@ -89,19 +94,34 @@ export async function handleMeliWebhook(rawPayload: unknown): Promise<HandlerRes
         };
     }
 
-    // 3. Persist to v2_webhook_events (idempotent via schema UNIQUE constraint)
-    // throwOnError() throws on DB errors — no post-check needed on the error variable.
-    await supabaseAdmin
-        .from('v2_webhook_events')
-        .insert({
-            store_id: store.store_id,
-            provider_event_id: payload.resource,
-            topic: payload.topic,
-            resource: payload.resource,
-            provider_user_id: externalAccountId,
-            raw_payload: rawPayload as Record<string, unknown>,
-        })
-        .throwOnError();
+    // 3. Persist to v2_webhook_events.
+    // Duplicate key is treated as idempotent success to keep callback reliability.
+    let v2Duplicate = false;
+    try {
+        await supabaseAdmin
+            .from('v2_webhook_events')
+            .insert({
+                store_id: store.store_id,
+                provider_event_id: payload.resource,
+                topic: payload.topic,
+                resource: payload.resource,
+                provider_user_id: externalAccountId,
+                raw_payload: rawPayload as Record<string, unknown>,
+            })
+            .throwOnError();
+    } catch (error) {
+        if (isDuplicateKeyError(error)) {
+            v2Duplicate = true;
+            console.info('[webhook-handler] V2 duplicate webhook (idempotent):', {
+                store_id: store.store_id,
+                provider_user_id: externalAccountId,
+                topic: payload.topic,
+                resource: payload.resource,
+            });
+        } else {
+            throw error;
+        }
+    }
 
     // Dual-write temporal: V2 sigue siendo el endpoint productivo mientras V3 recibe tráfico real.
     try {
@@ -118,5 +138,5 @@ export async function handleMeliWebhook(rawPayload: unknown): Promise<HandlerRes
         console.error('[webhook-handler] V3 dual-write failed:', { message });
     }
 
-    return { status: 200, body: { ok: true } };
+    return { status: 200, body: { ok: true, idempotent_duplicate: v2Duplicate } };
 }
