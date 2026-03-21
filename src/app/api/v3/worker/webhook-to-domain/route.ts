@@ -5,8 +5,17 @@ function normalizeSecret(value: string): string {
     return value.replace(/[\r\n\t\s]+/g, '').trim();
 }
 
+function extractBearerToken(value: string): string {
+    const normalized = normalizeSecret(value);
+    const prefix = 'Bearer ';
+    if (!normalized.startsWith(prefix)) return '';
+    return normalizeSecret(normalized.slice(prefix.length));
+}
+
 function isAuthorized(request: NextRequest): boolean {
-    const provided = normalizeSecret(request.headers.get('x-cron-secret') ?? '');
+    const providedHeader = normalizeSecret(request.headers.get('x-cron-secret') ?? '');
+    const providedBearer = extractBearerToken(request.headers.get('authorization') ?? '');
+    const provided = providedHeader || providedBearer;
     const expected = normalizeSecret(process.env.CRON_SECRET ?? '');
     if (!provided || !expected) return false;
     return provided === expected;
