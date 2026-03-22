@@ -46,10 +46,10 @@ export type AreaSignal = {
     evidence: Record<string, unknown>;
 };
 
-const SURFACE_CARD = "rounded-[28px] border border-[#e5dfd3] bg-white shadow-[0_12px_24px_rgba(15,23,42,0.07)]";
-const SURFACE_INSET = "rounded-[22px] border border-[#ebe6dc]";
-const SECTION_EYEBROW = "text-xs font-extrabold uppercase tracking-[0.24em] text-[#91949d]";
-const CHIP_BASE = "inline-flex items-center gap-1 rounded-full px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.08em]";
+const SURFACE_CARD = "rounded-[28px] border border-[#ddd8ce] bg-white shadow-[0_10px_22px_rgba(15,23,42,0.06)]";
+const SURFACE_INSET = "rounded-[20px] border border-[#e8e3da]";
+const SECTION_EYEBROW = "text-[10px] font-extrabold uppercase tracking-[0.3em] text-[#667084]";
+const CHIP_BASE = "inline-flex items-center gap-1 rounded-full px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.1em]";
 
 // ─── Lógica de datos (sin cambios semánticos) ─────────────────────────────────
 
@@ -244,34 +244,32 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
     return (
         <div className="w-full min-w-0">
             {/* ── Encabezado de la sección ─────────────────────────────── */}
-            <section className={`mb-6 overflow-hidden ${SURFACE_CARD}`}>
-                <div className="bg-[linear-gradient(180deg,#fbfbf9_0%,#ffffff_100%)] px-7 py-7 sm:px-8">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div className="max-w-3xl">
-                            <p className={SECTION_EYEBROW}>
-                                Estado general
-                            </p>
-                            <h1 className="mt-2 text-3xl font-black tracking-tight text-[#06102c] sm:text-[2.6rem]">
-                                Áreas del negocio
-                            </h1>
-                            <p className="mt-3 max-w-2xl text-[1.02rem] leading-7 text-slate-500">{estadoTexto}</p>
-                        </div>
-                        <span
-                            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.08em] ${
-                                health.good
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-red-100 text-red-700"
-                            }`}
-                        >
-                            <span className={`h-2 w-2 rounded-full ${health.good ? "bg-green-500" : "bg-red-500"}`} />
-                            {health.text}
-                        </span>
+            <section className="mb-7 border-b border-[#e7e2d9] pb-6">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="max-w-3xl">
+                        <p className={SECTION_EYEBROW}>
+                            Estado general
+                        </p>
+                        <h1 className="mt-2 text-3xl font-black tracking-[-0.03em] text-[#06102c] sm:text-[2.8rem]">
+                            Áreas del negocio
+                        </h1>
+                        <p className="mt-2 max-w-2xl text-[1.04rem] leading-8 text-slate-600">{estadoTexto}</p>
                     </div>
+                    <span
+                        className={`inline-flex items-center gap-2 rounded-full border border-[#e8e3da] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.08em] ${
+                            health.good
+                                ? "text-green-700"
+                                : "text-red-700"
+                        }`}
+                    >
+                        <span className={`h-2 w-2 rounded-full ${health.good ? "bg-green-500" : "bg-red-500"}`} />
+                        {health.text}
+                    </span>
                 </div>
             </section>
 
             {/* ── Tabs de áreas ────────────────────────────────────────── */}
-            <div className="mb-6 grid grid-cols-2 gap-1.5 rounded-[20px] border border-[#e5dfd3] bg-white p-1.5 shadow-[0_12px_24px_rgba(15,23,42,0.05)] sm:flex">
+            <div className="mb-7 grid grid-cols-2 gap-1.5 rounded-[16px] border border-[#e7e2d9] bg-[#f5f5f6] p-1.5 sm:flex">
                 {AREAS.map((area) => {
                     const active = area.key === selectedAreaKey;
                     const Icon = area.icon;
@@ -283,16 +281,16 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                             key={area.key}
                             type="button"
                             onClick={() => setSelectedAreaKey(area.key)}
-                            className={`relative flex min-h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] px-2 py-3 text-sm font-bold transition-all sm:min-h-[66px] sm:gap-2.5 sm:px-3 ${
+                            className={`relative flex min-h-[56px] flex-1 items-center justify-center gap-2 rounded-[12px] px-2 py-2.5 text-sm font-bold transition-all sm:min-h-[58px] sm:gap-2 sm:px-3 ${
                                 active
-                                    ? "bg-[#0f4fe7] text-white shadow-[0_12px_22px_rgba(29,78,216,0.24)]"
-                                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                    ? "bg-white text-[#0f4fe7] shadow-[0_6px_14px_rgba(15,23,42,0.08)]"
+                                    : "text-slate-600 hover:bg-[#f0f1f3] hover:text-slate-900"
                             }`}
                         >
                             {hasAlert && !active && (
                                 <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-red-500" />
                             )}
-                            <Icon className={`h-4 w-4 shrink-0 ${active ? "text-white" : "text-slate-400"}`} />
+                            <Icon className={`hidden h-4 w-4 shrink-0 sm:block ${active ? "text-[#0f4fe7]" : "text-slate-400"}`} />
                             <span className="truncate text-xs sm:text-sm">{area.label}</span>
                         </button>
                     );
@@ -302,12 +300,13 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
             {/* ── Cuerpo principal: panel izquierdo + columna derecha ──── */}
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
 
-                {/* Panel de métricas del área — aparece 2do en mobile */}
-                <div className="order-2 space-y-6 lg:order-1">
+                {/* Panel de métricas del área */}
+                <div className="space-y-6">
 
                     {/* Card principal del panel */}
-                    <section className={`overflow-hidden ${SURFACE_CARD}`}>
-                        <div className="flex items-center justify-between border-b border-[#f1ece3] bg-[linear-gradient(180deg,#fbfbf8_0%,#f6f7fb_100%)] px-6 py-5">
+                    <section className={`relative overflow-hidden ${SURFACE_CARD}`}>
+                        <div className="absolute inset-y-0 left-0 w-[4px] bg-[#1463ea]" />
+                        <div className="flex items-center justify-between border-b border-[#eee9e0] bg-[linear-gradient(180deg,#fbfbf8_0%,#f6f7fb_100%)] px-6 py-5">
                             <div>
                                 <p className={SECTION_EYEBROW}>
                                     Panel de {areaLabel}
@@ -339,10 +338,10 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                                         return (
                                             <div
                                                 key={card.title}
-                                                className={`min-h-[176px] rounded-[22px] border p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${
+                                                className={`min-h-[168px] rounded-[18px] border p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${
                                                     card.alert
                                                         ? "border-red-200 bg-[linear-gradient(180deg,#fff7f7_0%,#fff0f0_100%)]"
-                                                        : "border-[#ebe6dc] bg-[linear-gradient(180deg,#ffffff_0%,#f7f8fb_100%)]"
+                                                        : "border-[#ebe6dc] bg-[linear-gradient(180deg,#ffffff_0%,#f8f9fb_100%)]"
                                                 }`}
                                             >
                                                 <div className="flex items-start justify-between gap-2">
@@ -356,7 +355,7 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                                                     />
                                                 </div>
                                                 <p
-                                                    className={`mt-6 text-[2.8rem] font-black tracking-[-0.04em] ${
+                                                    className={`mt-6 text-[2.6rem] font-black tracking-[-0.04em] ${
                                                         card.alert ? "text-red-600" : "text-slate-900"
                                                     }`}
                                                 >
@@ -398,7 +397,7 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                         {hasSignals ? (
                             <ul className="divide-y divide-slate-100">
                                 {areaSignals.map((signal) => (
-                                    <li key={signal.signal_key} className="flex items-start gap-4 px-6 py-5">
+                                    <li key={signal.signal_key} className="flex items-start gap-4 px-6 py-4.5">
                                         <div className="mt-0.5">
                                             <SeverityBadge severity={signal.severity} />
                                         </div>
@@ -423,8 +422,8 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                     </section>
                 </div>
 
-                {/* Columna derecha — aparece 1ra en mobile */}
-                <div className="order-1 space-y-6 lg:order-2">
+                {/* Columna derecha */}
+                <div className="space-y-6">
 
                     {/* Score del negocio */}
                     {score !== null && (
@@ -499,7 +498,7 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                     </section>
 
                     {/* Fuente de datos */}
-                    <div className="rounded-[22px] border border-[#ebe6dc] bg-[linear-gradient(180deg,#fafaf8_0%,#f4f5f7_100%)] px-4 py-4">
+                    <div className="rounded-[18px] border border-[#ebe6dc] bg-[linear-gradient(180deg,#fafaf8_0%,#f4f5f7_100%)] px-4 py-4">
                         <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-slate-400">
                             Fuente de datos
                         </p>

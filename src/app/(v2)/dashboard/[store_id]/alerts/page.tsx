@@ -35,10 +35,10 @@ const triggerRows = [
     { rule: "Descenso de salud del negocio en", value: 8, unit: "Puntos semanales", level: "medio" },
 ];
 
-const SURFACE_CARD = "rounded-[28px] border border-[#e5dfd3] bg-white shadow-[0_12px_24px_rgba(15,23,42,0.07)]";
-const SURFACE_INSET = "rounded-[22px] border border-[#ebe6dc]";
-const SECTION_EYEBROW = "text-xs font-black uppercase tracking-[0.22em] text-slate-500";
-const CHIP_BASE = "rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.08em]";
+const SURFACE_CARD = "rounded-[28px] border border-[#ddd8ce] bg-white shadow-[0_10px_22px_rgba(15,23,42,0.06)]";
+const SURFACE_INSET = "rounded-[20px] border border-[#e8e3da]";
+const SECTION_EYEBROW = "text-[10px] font-black uppercase tracking-[0.3em] text-[#616775]";
+const CHIP_BASE = "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em]";
 
 export default function AlertsCenterPage() {
     const [channelsActive, setChannelsActive] = useState({
@@ -61,13 +61,12 @@ export default function AlertsCenterPage() {
     return (
         <div className="mx-auto w-full max-w-6xl">
             <section className="mb-8">
-                <h1 className="text-3xl font-black tracking-tight text-[#07163d] sm:text-5xl">Notificaciones y alertas</h1>
-                <p className="mt-3 max-w-4xl text-base leading-7 text-slate-700 sm:text-2xl sm:leading-9">
+                <h1 className="text-3xl font-black tracking-[-0.03em] text-[#07163d] sm:text-5xl">Notificaciones y alertas</h1>
+                <p className="mt-3 max-w-4xl text-base leading-7 text-slate-700 sm:text-[1.95rem] sm:leading-[1.32]">
                     SmartSeller te avisa antes de que los problemas afecten tus ventas. Elegi que cosas queres que te avisemos, por donde y con que urgencia.
                 </p>
             </section>
 
-            {/* Mobile: aside first, then content */}
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="space-y-8">
                     <section className="space-y-4">
@@ -114,15 +113,15 @@ export default function AlertsCenterPage() {
                                         key={item.key}
                                         type="button"
                                         onClick={() => setChannelsActive((curr) => ({ ...curr, [item.key]: !curr[item.key] }))}
-                                        className={`min-h-[176px] rounded-[22px] border p-5 text-left transition ${
-                                            enabled ? "border-[#ebe6dc] bg-white shadow-[0_10px_20px_rgba(15,23,42,0.06)]" : "border-[#ebe6dc] bg-slate-50"
+                                        className={`min-h-[176px] rounded-[18px] border p-5 text-left transition ${
+                                            enabled ? "border-[#e6e1d8] bg-white shadow-[0_10px_20px_rgba(15,23,42,0.06)]" : "border-[#e6e1d8] bg-[#f7f7f8]"
                                         }`}
                                     >
-                                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#eef1f6] text-slate-600">
                                             <Icon className="h-5 w-5" />
                                         </span>
-                                        <p className="mt-4 text-xl font-black text-slate-900">{item.title}</p>
-                                        <p className="mt-1 text-sm font-medium text-slate-600">{item.subtitle}</p>
+                                        <p className="mt-4 text-[1.3rem] font-black tracking-[-0.02em] text-slate-900">{item.title}</p>
+                                        <p className="mt-1 text-[0.92rem] font-medium text-slate-600">{item.subtitle}</p>
                                         <span className={`mt-4 inline-flex ${CHIP_BASE} ${item.activeTone}`}>
                                             {enabled ? "ACTIVO" : item.activeLabel}
                                         </span>
@@ -139,14 +138,14 @@ export default function AlertsCenterPage() {
                             <div className="space-y-6">
                                 {problemGroups.map((group) => (
                                     <div key={group.title}>
-                                        <p className="mb-3 border-b border-slate-100 pb-2 text-xs font-black uppercase tracking-[0.12em] text-slate-500">{group.title}</p>
+                                        <p className="mb-3 border-b border-[#efebe4] pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{group.title}</p>
                                         <div className="grid gap-3 sm:grid-cols-2">
                                             {group.items.map((item) => (
                                                 <button
                                                     key={item}
                                                     type="button"
                                                     onClick={() => setSelectedProblems((curr) => ({ ...curr, [item]: !curr[item] }))}
-                                                    className="flex min-h-[52px] items-center justify-between rounded-[16px] border border-[#ebe6dc] px-4 py-3 text-left hover:bg-slate-50"
+                                                    className="flex min-h-[52px] items-center justify-between rounded-[14px] border border-[#ebe6dc] px-4 py-3 text-left hover:bg-[#f8f9fb]"
                                                 >
                                                     <span className="text-sm font-semibold text-slate-800">{item}</span>
                                                     <span className={`inline-flex h-5 w-5 items-center justify-center rounded-[4px] ${selectedProblems[item] ? "bg-[#07245c] text-white" : "bg-slate-100 text-slate-400"}`}>
@@ -176,13 +175,13 @@ export default function AlertsCenterPage() {
                                         key={item.key}
                                         type="button"
                                         onClick={() => setSelectedFreq(item.key)}
-                                        className={`min-h-[144px] rounded-[22px] border p-5 text-left transition ${
+                                        className={`min-h-[144px] rounded-[18px] border p-5 text-left transition ${
                                             active ? "border-[#031a44] bg-[#031a44] text-white shadow-[0_12px_28px_rgba(3,26,68,0.24)]" : "border-[#ebe6dc] bg-white text-slate-800"
                                         }`}
                                     >
                                         <Icon className={`h-5 w-5 ${active ? "text-white" : "text-slate-500"}`} />
-                                        <p className="mt-6 text-lg font-black">{item.title}</p>
-                                        <p className={`mt-1 text-sm ${active ? "text-slate-200" : "text-slate-600"}`}>{item.desc}</p>
+                                        <p className="mt-6 text-[1.08rem] font-black">{item.title}</p>
+                                        <p className={`mt-1 text-[0.83rem] ${active ? "text-slate-200" : "text-slate-600"}`}>{item.desc}</p>
                                     </button>
                                 );
                             })}
@@ -203,17 +202,17 @@ export default function AlertsCenterPage() {
                         <div className={`${SURFACE_CARD}`}>
                             {/* Desktop/tablet: grid table */}
                             <div className="hidden sm:block">
-                                <div className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] border-b border-slate-100 px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">
+                                <div className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] border-b border-[#efebe4] px-5 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
                                     <span>Regla</span>
                                     <span>Valor</span>
                                     <span>Unidad</span>
                                     <span>Nivel</span>
                                 </div>
-                                <div className="divide-y divide-slate-100">
+                                <div className="divide-y divide-[#efebe4]">
                                     {triggerRows.map((row) => (
                                         <div key={row.rule} className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] items-center px-5 py-4">
                                             <p className="text-sm font-semibold text-slate-800">{row.rule}</p>
-                                            <div className="w-14 rounded-md bg-slate-100 px-3 py-2 text-center text-sm font-black text-slate-900">{row.value}</div>
+                                            <div className="w-14 rounded-[8px] bg-slate-100 px-3 py-2 text-center text-sm font-black text-slate-900">{row.value}</div>
                                             <p className="text-sm text-slate-600">{row.unit}</p>
                                             <span className={`mx-auto h-2.5 w-2.5 rounded-full ${row.level === "alto" ? "bg-red-500" : "bg-amber-500"}`} />
                                         </div>
@@ -221,7 +220,7 @@ export default function AlertsCenterPage() {
                                 </div>
                             </div>
                             {/* Mobile: stacked cards */}
-                            <div className="divide-y divide-slate-100 sm:hidden">
+                            <div className="divide-y divide-[#efebe4] sm:hidden">
                                 {triggerRows.map((row) => (
                                     <div key={row.rule} className="flex flex-col gap-3 px-5 py-4">
                                         <p className="text-sm font-semibold leading-5 text-slate-800">{row.rule}</p>
@@ -253,14 +252,14 @@ export default function AlertsCenterPage() {
                             ].map((channel) => {
                                 const Icon = channel.icon;
                                 return (
-                                    <div key={channel.title} className="flex min-h-[88px] items-center justify-between rounded-[22px] border border-[#ebe6dc] bg-white px-4 py-4 shadow-[0_10px_20px_rgba(15,23,42,0.04)]">
-                                        <div className="flex items-center gap-3">
-                                            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                                    <div key={channel.title} className="flex min-h-[88px] flex-col items-start gap-4 rounded-[18px] border border-[#e8e3da] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <span className="inline-flex h-11 w-11 items-center justify-center rounded-[10px] bg-[#eef1f6] text-slate-600">
                                                 <Icon className="h-5 w-5" />
                                             </span>
-                                            <div>
+                                            <div className="min-w-0">
                                                 <p className="text-xs font-black uppercase tracking-[0.08em] text-slate-500">{channel.title} - {channel.hint}</p>
-                                                <p className="text-lg font-black text-slate-900">{channel.value}</p>
+                                                <p className="break-all text-lg font-black text-slate-900">{channel.value}</p>
                                             </div>
                                         </div>
                                         <button type="button" className="text-xs font-black uppercase tracking-[0.08em] text-[#07245c]">{channel.action}</button>
@@ -291,7 +290,7 @@ export default function AlertsCenterPage() {
                                         </button>
                                     ))}
                                 </div>
-                                <div className="border-l border-slate-200 pl-5">
+                                <div className="border-t border-slate-200 pt-5 md:border-l md:border-t-0 md:pl-5 md:pt-0">
                                     <p className="text-xs font-black uppercase tracking-[0.08em] text-slate-500">Envio de resumen diario</p>
                                     <div className="mt-3 flex items-center gap-2">
                                         <div className="rounded-md bg-slate-100 px-3 py-2 text-sm font-black text-slate-900">08:30 AM</div>
@@ -305,35 +304,35 @@ export default function AlertsCenterPage() {
 
                 <aside className="order-first space-y-4 lg:order-none lg:sticky lg:top-6 lg:h-fit">
                     <section className={`${SURFACE_CARD} p-5`}>
-                        <h2 className="text-3xl font-black leading-8 text-[#07163d]">Atencion inmediata</h2>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">Resumen del estado operativo y disparadores recientes.</p>
+                        <h2 className="text-[2rem] font-black leading-8 tracking-[-0.02em] text-[#07163d]">Atencion inmediata</h2>
+                        <p className="mt-2 text-[0.84rem] leading-6 text-slate-600">Resumen del estado operativo y disparadores recientes.</p>
 
                         <div className="mt-4 grid grid-cols-2 gap-2">
-                            <div className="rounded-[16px] bg-slate-50 p-3">
-                                <p className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Total</p>
-                                <p className="mt-2 text-4xl font-black text-slate-900">24</p>
+                            <div className="rounded-[14px] bg-slate-50 p-3">
+                                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Total</p>
+                                <p className="mt-2 text-[2.25rem] font-black text-slate-900">24</p>
                             </div>
-                            <div className="rounded-[16px] border border-red-200 bg-red-50 p-3">
-                                <p className="text-[11px] font-black uppercase tracking-[0.08em] text-red-500">Criticas</p>
-                                <p className="mt-2 text-4xl font-black text-red-600">3</p>
+                            <div className="rounded-[14px] border border-red-200 bg-red-50 p-3">
+                                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-red-500">Criticas</p>
+                                <p className="mt-2 text-[2.25rem] font-black text-red-600">3</p>
                             </div>
-                            <div className="rounded-[16px] bg-slate-50 p-3">
-                                <p className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Moderadas</p>
-                                <p className="mt-2 text-4xl font-black text-amber-500">12</p>
+                            <div className="rounded-[14px] bg-slate-50 p-3">
+                                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Moderadas</p>
+                                <p className="mt-2 text-[2.25rem] font-black text-amber-500">12</p>
                             </div>
-                            <div className="rounded-[16px] bg-slate-50 p-3">
-                                <p className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Pendientes</p>
-                                <p className="mt-2 text-4xl font-black text-slate-700">5</p>
+                            <div className="rounded-[14px] bg-slate-50 p-3">
+                                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Pendientes</p>
+                                <p className="mt-2 text-[2.25rem] font-black text-slate-700">5</p>
                             </div>
                         </div>
 
                         <div className="mt-5 space-y-2">
-                            <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-500">Disparadores recientes</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Disparadores recientes</p>
                             {[
                                 { title: "Sin ventas en 7 dias", time: "Hoy, 08:30 AM" },
                                 { title: "Cancelaciones: 40%", time: "Ayer, 21:15 PM" },
                             ].map((item) => (
-                                <div key={item.title} className="flex min-h-[68px] items-center justify-between rounded-[16px] border border-[#ebe6dc] px-3 py-3">
+                                <div key={item.title} className="flex min-h-[68px] items-center justify-between rounded-[14px] border border-[#e8e3da] px-3 py-3">
                                     <div>
                                         <p className="text-sm font-black text-slate-800">{item.title}</p>
                                         <p className="text-xs text-slate-500">{item.time}</p>
@@ -345,12 +344,12 @@ export default function AlertsCenterPage() {
                     </section>
 
                     <section className="rounded-[28px] border border-[#17233f] bg-[#031a44] p-5 text-white shadow-[0_14px_26px_rgba(3,26,68,0.35)]">
-                        <h3 className="text-3xl font-black">Guardar cambios</h3>
+                        <h3 className="text-[2rem] font-black tracking-[-0.02em]">Guardar cambios</h3>
                         <p className="mt-2 text-sm leading-6 text-slate-200">Esta configuracion impacta en como te protegemos desde ahora.</p>
-                        <button type="button" className="mt-5 inline-flex w-full items-center justify-center rounded-[16px] bg-white px-4 py-3 text-sm font-black text-[#031a44]">
+                        <button type="button" className="mt-5 inline-flex w-full items-center justify-center rounded-[14px] bg-white px-4 py-3 text-sm font-black text-[#031a44]">
                             Aplicar ahora
                         </button>
-                        <button type="button" className="mt-3 inline-flex w-full items-center justify-center rounded-[16px] border border-white/20 px-4 py-3 text-sm font-semibold text-slate-200">
+                        <button type="button" className="mt-3 inline-flex w-full items-center justify-center rounded-[14px] border border-white/20 px-4 py-3 text-sm font-semibold text-slate-200">
                             Restablecer sugerido
                         </button>
                     </section>
@@ -363,7 +362,7 @@ export default function AlertsCenterPage() {
                         <p className="mt-3 text-sm leading-6 text-red-800">
                             Detectamos 2 eventos criticos pendientes que pueden comprometer tu reputacion.
                         </p>
-                        <button type="button" className="mt-4 inline-flex w-full items-center justify-center rounded-[16px] bg-red-600 px-4 py-3 text-sm font-black text-white">
+                        <button type="button" className="mt-4 inline-flex w-full items-center justify-center rounded-[14px] bg-red-600 px-4 py-3 text-sm font-black text-white">
                             Resolver incidentes
                         </button>
                     </section>

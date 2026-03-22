@@ -43,10 +43,10 @@ type AreaCard = {
     rows: Array<{ label: string; value: string; tone?: "default" | "danger" | "success" }>;
 };
 
-const SURFACE_CARD = "rounded-[28px] border border-[#e5dfd3] bg-white shadow-[0_12px_24px_rgba(15,23,42,0.07)]";
+const SURFACE_CARD = "rounded-[28px] border border-[#ddd8ce] bg-white shadow-[0_10px_22px_rgba(15,23,42,0.06)]";
 const SURFACE_INSET = "rounded-[22px] border border-[#ebe6dc]";
 const SECTION_EYEBROW = "text-xs font-extrabold uppercase tracking-[0.24em] text-[#91949d]";
-const CHIP_BASE = "rounded-full px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.08em]";
+const CHIP_BASE = "rounded-full px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.1em]";
 
 function signalHeadline(signalKey: string): string {
     if (signalKey === "no_orders_7d") return "Esta semana no vendiste nada";
@@ -306,24 +306,24 @@ export default async function DashboardPrincipalPage({
     const calibrationMessage = getNoScoreBootstrapMessage(bootstrap?.bootstrap_status ?? null);
 
     return (
-        <div className="space-y-8 pb-10">
+        <div className="space-y-7 pb-10">
             <section className="grid gap-6 lg:grid-cols-[minmax(0,1.85fr)_320px]">
                 <article className={`${SURFACE_CARD} px-5 py-6 sm:px-8 sm:py-8 lg:px-9`}>
                     <p className={SECTION_EYEBROW}>Cómo está tu negocio hoy</p>
                     <div className="mt-7 grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:items-center">
                         <div className="flex min-w-0 items-center gap-5 sm:gap-7">
                             <div className="flex min-w-0 items-end leading-none">
-                                <span className="text-[4.8rem] font-black tracking-[-0.08em] text-[#0f1117] sm:text-[6.4rem]">{scoreData ? scoreData.score : "--"}</span>
-                                <span className="pb-2 text-[2.6rem] font-black tracking-[-0.06em] text-[#c5c8cf] sm:text-[3.6rem]">/100</span>
+                                <span className="text-[4.5rem] font-black tracking-[-0.08em] text-[#0f1117] sm:text-[5.7rem]">{scoreData ? scoreData.score : "--"}</span>
+                                <span className="pb-2 text-[2.25rem] font-black tracking-[-0.06em] text-[#c5c8cf] sm:text-[3.2rem]">/100</span>
                             </div>
                             <div className="hidden h-20 w-px bg-[#ece8de] lg:block" />
                         </div>
                         <div className="min-w-0 max-w-[27rem]">
-                            <div className="flex items-center gap-2 text-[1.6rem] font-black leading-none text-[#e12f2f] sm:text-[2.2rem]">
+                            <div className="flex items-center gap-2 text-[1.4rem] font-black leading-none text-[#e12f2f] sm:text-[2rem]">
                                 <ArrowDown className="h-5 w-5 sm:h-6 sm:w-6" />
                                 <span>Perdés fuerza</span>
                             </div>
-                            <p className="mt-3 text-[1.2rem] font-semibold leading-[1.36] text-[#2d313a] sm:text-[1.82rem] sm:leading-[1.24]">
+                            <p className="mt-3 text-[1.1rem] font-semibold leading-[1.42] text-[#2d313a] sm:text-[1.56rem] sm:leading-[1.28]">
                                 Hoy tenés problemas operativos que ya están frenando tus ventas.
                             </p>
                         </div>
@@ -333,7 +333,7 @@ export default async function DashboardPrincipalPage({
                         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                             <div>
                                 <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#9ea2aa]">Si seguís así</p>
-                                <p className="mt-2 max-w-[35rem] text-[1.06rem] font-semibold leading-7 text-[#21252c]">
+                                <p className="mt-2 max-w-[35rem] text-[1.02rem] font-semibold leading-7 text-[#21252c]">
                                     {primarySignal
                                         ? "Podés cerrar el mes con menor exposición en listados y caída de ingresos."
                                         : scoreData
@@ -342,7 +342,7 @@ export default async function DashboardPrincipalPage({
                                 </p>
                             </div>
                             <div className="text-right">
-                                <p className="text-[3rem] font-black leading-none tracking-[-0.05em] text-[#e12f2f]">
+                                <p className="text-[2.7rem] font-black leading-none tracking-[-0.05em] text-[#e12f2f]">
                                     {delta !== null ? `${Math.abs(delta)} pts` : scoreData ? `${scoreData.score} pts` : "--"}
                                 </p>
                                 <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-[#a6a9b1]">Proyección cierre</p>
@@ -355,9 +355,9 @@ export default async function DashboardPrincipalPage({
                     <p className={SECTION_EYEBROW}>Hoy en tu negocio</p>
                     <div className="mt-8 space-y-6">
                         {todayMetrics.map((item) => (
-                            <div key={item.label} className="grid min-h-[52px] grid-cols-[1fr_auto] items-center gap-5 border-b border-[#f0ece4] pb-4 last:border-b-0 last:pb-0">
-                                <span className="text-[1.02rem] font-semibold text-[#444853]">{item.label}</span>
-                                <span className={`text-[1.7rem] font-black tabular-nums ${item.tone === "danger" && (item.value ?? 0) > 0 ? "text-[#e12f2f]" : "text-[#101219]"}`}>
+                            <div key={item.label} className="grid min-h-[50px] grid-cols-[1fr_auto] items-center gap-5 border-b border-[#f0ece4] pb-4 last:border-b-0 last:pb-0">
+                                <span className="text-[1rem] font-semibold text-[#444853]">{item.label}</span>
+                                <span className={`text-[1.62rem] font-black tabular-nums ${item.tone === "danger" && (item.value ?? 0) > 0 ? "text-[#e12f2f]" : "text-[#101219]"}`}>
                                     {formatMetricValue(item.value)}
                                 </span>
                             </div>
@@ -367,7 +367,7 @@ export default async function DashboardPrincipalPage({
             </section>
 
             <section className="grid gap-6 lg:grid-cols-[minmax(0,1.85fr)_320px]">
-                <article className={`${SURFACE_CARD} px-8 py-8`}>
+                <article className={`${SURFACE_CARD} px-7 py-7`}>
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <p className={SECTION_EYEBROW}>Lo que te está frenando hoy</p>
@@ -380,7 +380,7 @@ export default async function DashboardPrincipalPage({
                         </Link>
                     </div>
 
-                    <div className="mt-7 space-y-5">
+                    <div className="mt-6 space-y-4.5">
                         {activeSignals.length > 0 ? (
                             activeSignals.slice(0, 3).map((signal) => (
                                 <article key={signal.signal_key} className={`relative overflow-hidden ${SURFACE_INSET} bg-[#faf9f6] px-6 py-5`}>
@@ -390,9 +390,9 @@ export default async function DashboardPrincipalPage({
                                             <span className={`${CHIP_BASE} ${signalBadgeClassName(signal)}`}>
                                                 {signalBadge(signal)}
                                             </span>
-                                            <h3 className="text-[1.8rem] font-black leading-tight text-[#161616]">{signalHeadline(signal.signal_key)}</h3>
+                                            <h3 className="text-[1.62rem] font-black leading-tight text-[#161616]">{signalHeadline(signal.signal_key)}</h3>
                                         </div>
-                                        <div className="grid gap-5 text-[1.02rem] leading-7 text-[#33353a] md:grid-cols-2">
+                                        <div className="grid gap-5 text-[0.98rem] leading-7 text-[#33353a] md:grid-cols-2">
                                             <div>
                                                 <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-[#969aa3]">Qué pasó</p>
                                                 <p className="mt-1">{evidenceSummary(signal)}</p>
@@ -402,7 +402,7 @@ export default async function DashboardPrincipalPage({
                                                 <p className="mt-1">{signalEffect(signal.signal_key)}</p>
                                             </div>
                                         </div>
-                                        <Link href={`/dashboard/${store_id}/alerts`} className="inline-flex items-center gap-2 text-[1rem] font-black text-[#1d4ed8]">
+                                        <Link href={`/dashboard/${store_id}/alerts`} className="inline-flex items-center gap-2 text-[0.98rem] font-black text-[#1d4ed8]">
                                             {signalAction(signal.signal_key)}
                                             <ArrowRight className="h-4 w-4" />
                                         </Link>
@@ -424,7 +424,7 @@ export default async function DashboardPrincipalPage({
                             <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-[#1d6dff]">
                                 Resolvé en 10 minutos
                             </p>
-                            <h3 className="mt-3 text-[3.1rem] font-black leading-[1.03] tracking-[-0.04em] text-white">
+                            <h3 className="mt-3 text-[2.8rem] font-black leading-[1.05] tracking-[-0.04em] text-white">
                                 Verificá tu
                                 <br />
                                 stock antes del
@@ -432,7 +432,7 @@ export default async function DashboardPrincipalPage({
                                 lunes
                             </h3>
                         </div>
-                        <p className="text-[1.08rem] leading-9 text-[#c0c8da]">
+                        <p className="text-[1.02rem] leading-8 text-[#c0c8da]">
                             {primarySignal
                                 ? "Tus últimas cancelaciones fueron por falta de stock disponible. Es la acción más urgente para estabilizar tu cuenta y proteger tu salud comercial."
                                 : scoreData
@@ -440,10 +440,10 @@ export default async function DashboardPrincipalPage({
                                   : calibrationMessage}
                         </p>
                     </div>
-                    <div className="mt-14">
+                    <div className="mt-12">
                         <Link
                             href={`/dashboard/${store_id}/alerts`}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-[16px] bg-[#1f5ded] px-5 py-4 text-[1.1rem] font-black text-white shadow-[0_12px_24px_rgba(31,93,237,0.38)] transition hover:bg-[#1b50cc]"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-[16px] bg-[#1f5ded] px-5 py-4 text-[1rem] font-black text-white shadow-[0_12px_24px_rgba(31,93,237,0.38)] transition hover:bg-[#1b50cc]"
                         >
                             Revisar stock ahora
                             <ArrowRight className="h-4 w-4" />
@@ -456,18 +456,18 @@ export default async function DashboardPrincipalPage({
                 {areaCards.map((card) => (
                     <article
                         key={card.name}
-                        className={`relative overflow-hidden rounded-[24px] border border-[#e5dfd3] bg-white px-6 py-6 shadow-[0_10px_20px_rgba(15,23,42,0.05)] before:absolute before:inset-x-0 before:top-0 before:h-[3px] ${card.accent.replace("before:inset-y-0 before:left-0 before:w-[4px] ", "")}`}
+                        className={`relative overflow-hidden rounded-[24px] border border-[#ddd8ce] bg-white px-5 py-5 shadow-[0_10px_20px_rgba(15,23,42,0.05)] before:absolute before:inset-x-0 before:top-0 before:h-[3px] ${card.accent.replace("before:inset-y-0 before:left-0 before:w-[4px] ", "")}`}
                     >
-                        <div className="space-y-6">
+                        <div className="space-y-5">
                             <div className="flex items-start justify-between gap-4">
-                                <h3 className="text-[1.5rem] font-black tracking-[-0.03em] text-[#151515]">{card.name}</h3>
+                                <h3 className="text-[1.42rem] font-black tracking-[-0.03em] text-[#151515]">{card.name}</h3>
                                 <span className={`${CHIP_BASE} ${card.badgeClassName}`}>
                                     {card.badge}
                                 </span>
                             </div>
-                            <div className="space-y-3.5">
+                            <div className="space-y-3">
                                 {card.rows.map((row) => (
-                                    <div key={`${card.name}-${row.label}`} className="grid grid-cols-[1fr_auto] items-center gap-4 text-[0.95rem]">
+                                    <div key={`${card.name}-${row.label}`} className="grid grid-cols-[1fr_auto] items-center gap-4 text-[0.9rem]">
                                         <span className="font-bold uppercase tracking-[0.05em] text-[#7a7f88]">{row.label}</span>
                                         <span
                                             className={`font-black tabular-nums ${
@@ -511,9 +511,9 @@ export default async function DashboardPrincipalPage({
 
                 <div className="mt-8">
                     {sparklineScores.length >= 2 ? (
-                        <div className="rounded-[22px] border border-[#ebe6dc] bg-[linear-gradient(180deg,#ffffff_0%,#f5f7fb_100%)] px-5 py-6">
+                        <div className="rounded-[22px] border border-[#e9e4da] bg-[linear-gradient(180deg,#ffffff_0%,#f4f6fb_100%)] px-4 py-5 sm:px-5 sm:py-6">
                             {/* SVG responsive: height scales with container */}
-                            <svg viewBox="0 0 960 260" className="h-[160px] w-full sm:h-[220px] lg:h-[260px]">
+                            <svg viewBox="0 0 960 260" className="h-[170px] w-full sm:h-[220px] lg:h-[250px]">
                                 <line x1="0" y1="220" x2="960" y2="220" stroke="#dbe3f2" strokeWidth="2" />
                                 <path d={sparklinePath(sparklineScores)} fill="none" stroke="#1d4ed8" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
                                 <circle
@@ -532,7 +532,7 @@ export default async function DashboardPrincipalPage({
                 </div>
 
                 <div className="mt-7 rounded-[22px] border border-[#ebe6dc] bg-[#f8f8f8] px-4 py-4">
-                    <div className="flex items-start gap-3 text-[1.05rem] italic text-[#33353a]">
+                    <div className="flex items-start gap-3 text-[1rem] italic text-[#33353a]">
                         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#9ca3af]" />
                         <p>
                         {delta !== null
