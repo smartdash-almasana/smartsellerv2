@@ -51,7 +51,7 @@ const previewBlocks = [
 
 const SURFACE_CARD = "rounded-[28px] border border-[#ddd8ce] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.06)]";
 const SURFACE_INSET = "rounded-[20px] border border-[#e8e3da]";
-const SECTION_EYEBROW = "text-[10px] font-extrabold uppercase tracking-[0.32em] text-[#5d6470]";
+const SECTION_EYEBROW = "text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#5d6470] sm:text-[10px] sm:tracking-[0.32em]";
 const CHIP_BASE = "rounded-full px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em]";
 
 export default function DashboardReportsPage() {
@@ -61,15 +61,15 @@ export default function DashboardReportsPage() {
     const [aiEnabled, setAiEnabled] = useState(true);
 
     return (
-        <div className="mx-auto w-full max-w-6xl">
-            <div className="mb-8 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+        <div className="mx-auto w-full max-w-6xl px-2 sm:px-0">
+            <div className="mb-8 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:gap-3 sm:text-[11px] sm:tracking-[0.2em]">
                 <span>Reportes</span>
                 <span>/</span>
                 <span className="text-slate-900">Crear reporte</span>
             </div>
 
-            <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="space-y-8">
+            <div className="grid gap-5 sm:gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="min-w-0 space-y-7 sm:space-y-8">
                     <section>
                         <h1 className="text-2xl font-black tracking-[-0.03em] text-[#06102c] sm:text-3xl lg:text-[2.8rem]">Crear reporte</h1>
                         <p className="mt-4 max-w-3xl text-[0.92rem] leading-7 text-slate-600 sm:text-[1rem] sm:leading-8">
@@ -78,7 +78,7 @@ export default function DashboardReportsPage() {
                     </section>
 
                     <section className="space-y-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#031a44] text-[10px] font-black text-white">01</span>
                             <p className={SECTION_EYEBROW}>Tipo de reporte</p>
                         </div>
@@ -91,7 +91,7 @@ export default function DashboardReportsPage() {
                                         key={card.id}
                                         type="button"
                                         onClick={() => setSelectedReport(card.id)}
-                                        className={`relative min-h-[156px] rounded-[18px] border p-5 text-left transition ${
+                                        className={`relative min-h-[142px] rounded-[18px] border p-4 text-left transition sm:min-h-[156px] sm:p-5 ${
                                             active
                                                 ? "border-[#031a44] bg-[#031a44] text-white shadow-[0_14px_30px_rgba(3,26,68,0.3)]"
                                                 : "border-[#e7e2d9] bg-[#f8f8f7] text-slate-900 hover:border-slate-300"
@@ -111,11 +111,11 @@ export default function DashboardReportsPage() {
                     </section>
 
                     <section className="space-y-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#031a44] text-[10px] font-black text-white">02</span>
                             <p className={SECTION_EYEBROW}>Periodo de analisis</p>
                         </div>
-                        <div className={`${SURFACE_INSET} bg-white p-3.5`}>
+                        <div className={`${SURFACE_INSET} bg-white p-2.5 sm:p-3.5`}>
                             <div className="grid gap-2 sm:grid-cols-4">
                                 {[
                                     { id: "7d" as const, label: "Ultimos 7 dias" },
@@ -145,12 +145,12 @@ export default function DashboardReportsPage() {
                     </section>
 
                     <section className="space-y-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#031a44] text-[10px] font-black text-white">03</span>
                             <p className={SECTION_EYEBROW}>Contenido del reporte</p>
                         </div>
-                        <div className={`${SURFACE_CARD} p-6`}>
-                            <div className="grid gap-8 md:grid-cols-2">
+                        <div className={`${SURFACE_CARD} p-4 sm:p-6`}>
+                            <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
                                 <div>
                                     <p className="mb-4 inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-500">
                                         <span className="h-1.5 w-1.5 rounded-full bg-[#8be28d]" />
@@ -198,7 +198,7 @@ export default function DashboardReportsPage() {
                     </section>
 
                     <section className="space-y-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#031a44] text-[10px] font-black text-white">04</span>
                             <p className={SECTION_EYEBROW}>Foco principal del informe</p>
                         </div>
@@ -227,7 +227,7 @@ export default function DashboardReportsPage() {
                     </section>
 
                     <section className={`overflow-hidden ${SURFACE_CARD}`}>
-                        <div className="flex flex-col gap-6 border-b border-slate-200 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-4 border-b border-slate-200 px-4 py-5 sm:gap-6 sm:px-6 sm:py-6 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#031a44] text-white shadow-[0_10px_20px_rgba(3,26,68,0.22)]">
                                     <Sparkles className="h-6 w-6" />
@@ -260,7 +260,7 @@ export default function DashboardReportsPage() {
                                 </button>
                             </div>
                         </div>
-                        <div className="grid gap-4 px-6 py-6 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-4 px-4 py-5 sm:px-6 sm:py-6 sm:grid-cols-2 lg:grid-cols-3">
                             {[
                                 { icon: Search, title: "Hallazgos clave", text: "Te muestra lo mas importante sin leer todo el detalle." },
                                 { icon: Target, title: "Patrones", text: "Detecta comportamientos que se repiten en periodos similares." },
@@ -279,7 +279,7 @@ export default function DashboardReportsPage() {
                     </section>
                 </div>
 
-                <aside className="order-first lg:order-none lg:sticky lg:top-6 lg:h-fit">
+                <aside className="order-first min-w-0 lg:order-none lg:sticky lg:top-6 lg:h-fit">
                     <section className="rounded-[24px] border border-[#ded9cf] bg-[linear-gradient(180deg,#ffffff_0%,#f7f8fa_100%)] p-5 shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
                         <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-600">Vista previa</p>
                         <div className="mt-4 space-y-2.5">

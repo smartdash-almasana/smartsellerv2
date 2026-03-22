@@ -45,7 +45,7 @@ type AreaCard = {
 
 const SURFACE_CARD = "rounded-[28px] border border-[#ddd8ce] bg-white shadow-[0_10px_22px_rgba(15,23,42,0.06)]";
 const SURFACE_INSET = "rounded-[22px] border border-[#ebe6dc]";
-const SECTION_EYEBROW = "text-xs font-extrabold uppercase tracking-[0.24em] text-[#91949d]";
+const SECTION_EYEBROW = "text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#91949d] sm:tracking-[0.24em]";
 const CHIP_BASE = "rounded-full px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.1em]";
 
 function signalHeadline(signalKey: string): string {
@@ -306,9 +306,9 @@ export default async function DashboardPrincipalPage({
     const calibrationMessage = getNoScoreBootstrapMessage(bootstrap?.bootstrap_status ?? null);
 
     return (
-        <div className="space-y-7 pb-10">
-            <section className="grid gap-6 lg:grid-cols-[minmax(0,1.85fr)_320px]">
-                <article className={`${SURFACE_CARD} px-5 py-6 sm:px-8 sm:py-8 lg:px-9`}>
+        <div className="space-y-7 px-2 pb-10 sm:px-0">
+            <section className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1.85fr)_320px]">
+                <article className={`${SURFACE_CARD} px-4 py-5 sm:px-8 sm:py-8 lg:px-9`}>
                     <p className={SECTION_EYEBROW}>Cómo está tu negocio hoy</p>
                     <div className="mt-7 grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:items-center">
                         <div className="flex min-w-0 items-center gap-4 sm:gap-6">
@@ -319,11 +319,11 @@ export default async function DashboardPrincipalPage({
                             <div className="hidden h-16 w-px bg-[#ece8de] lg:block" />
                         </div>
                         <div className="min-w-0 max-w-[27rem]">
-                            <div className="flex items-center gap-2 text-[1rem] font-black leading-none text-[#e12f2f] sm:text-[1.28rem]">
+                            <div className="flex items-center gap-2 text-[0.92rem] font-black leading-none text-[#e12f2f] sm:text-[1.1rem]">
                                 <ArrowDown className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
                                 <span>Perdés fuerza</span>
                             </div>
-                            <p className="mt-3 text-[0.9rem] font-semibold leading-[1.42] text-[#2d313a] sm:text-[1.04rem] sm:leading-[1.28]">
+                            <p className="mt-3 text-[0.86rem] font-semibold leading-[1.42] text-[#2d313a] sm:text-[0.98rem] sm:leading-[1.28]">
                                 Hoy tenés problemas operativos que ya están frenando tus ventas.
                             </p>
                         </div>
@@ -342,7 +342,7 @@ export default async function DashboardPrincipalPage({
                                 </p>
                             </div>
                             <div className="text-right">
-                                <p className="text-[1.75rem] font-black leading-none tracking-[-0.05em] text-[#e12f2f] sm:text-[2rem]">
+                                <p className="text-[1.55rem] font-black leading-none tracking-[-0.05em] text-[#e12f2f] sm:text-[1.8rem]">
                                     {delta !== null ? `${Math.abs(delta)} pts` : scoreData ? `${scoreData.score} pts` : "--"}
                                 </p>
                                 <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-[#a6a9b1]">Proyección cierre</p>
@@ -351,7 +351,7 @@ export default async function DashboardPrincipalPage({
                     </div>
                 </article>
 
-                <aside className={`${SURFACE_CARD} px-7 py-8`}>
+                <aside className={`${SURFACE_CARD} px-4 py-6 sm:px-7 sm:py-8`}>
                     <p className={SECTION_EYEBROW}>Hoy en tu negocio</p>
                     <div className="mt-8 space-y-5">
                         {todayMetrics.map((item) => (
@@ -366,8 +366,8 @@ export default async function DashboardPrincipalPage({
                 </aside>
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-[minmax(0,1.85fr)_320px]">
-                <article className={`${SURFACE_CARD} px-7 py-7`}>
+            <section className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1.85fr)_320px]">
+                <article className={`${SURFACE_CARD} px-4 py-5 sm:px-7 sm:py-7`}>
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <p className={SECTION_EYEBROW}>Lo que te está frenando hoy</p>
@@ -383,7 +383,7 @@ export default async function DashboardPrincipalPage({
                     <div className="mt-6 space-y-4">
                         {activeSignals.length > 0 ? (
                             activeSignals.slice(0, 3).map((signal) => (
-                                <article key={signal.signal_key} className={`relative overflow-hidden ${SURFACE_INSET} bg-[#faf9f6] px-6 py-5`}>
+                                <article key={signal.signal_key} className={`relative overflow-hidden ${SURFACE_INSET} bg-[#faf9f6] px-4 py-4 sm:px-6 sm:py-5`}>
                                     <div className={`absolute inset-y-0 left-0 w-[3px] ${signalAccentClassName(signal)}`} />
                                     <div className="space-y-4 pl-1">
                                         <div className="flex flex-wrap items-center gap-2.5">
@@ -417,14 +417,14 @@ export default async function DashboardPrincipalPage({
                     </div>
                 </article>
 
-                <aside className="rounded-[28px] border border-[#17233f] bg-[linear-gradient(178deg,#0a1738_0%,#09122a_100%)] px-7 py-7 text-white shadow-[0_16px_34px_rgba(3,11,27,0.42)]">
+                <aside className="rounded-[28px] border border-[#17233f] bg-[linear-gradient(178deg,#0a1738_0%,#09122a_100%)] px-4 py-6 text-white shadow-[0_16px_34px_rgba(3,11,27,0.42)] sm:px-7 sm:py-7">
                     <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-[#8f98b2]">Recomendación IA</p>
                     <div className="mt-7 space-y-6">
                         <div>
                             <p className="text-[0.66rem] font-extrabold uppercase tracking-[0.18em] text-[#1d6dff]">
                                 Resolvé en 10 minutos
                             </p>
-                            <h3 className="mt-3 text-[1.9rem] font-black leading-[1.06] tracking-[-0.04em] text-white sm:text-[2.2rem]">
+                            <h3 className="mt-3 text-[1.6rem] font-black leading-[1.06] tracking-[-0.04em] text-white sm:text-[2.2rem]">
                                 Verificá tu
                                 <br />
                                 stock antes del
@@ -452,11 +452,11 @@ export default async function DashboardPrincipalPage({
                 </aside>
             </section>
 
-            <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <section className="grid gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-4">
                 {areaCards.map((card) => (
                     <article
                         key={card.name}
-                        className={`relative overflow-hidden rounded-[24px] border border-[#ddd8ce] bg-white px-5 py-5 shadow-[0_10px_20px_rgba(15,23,42,0.05)] before:absolute before:inset-x-0 before:top-0 before:h-[3px] ${card.accent.replace("before:inset-y-0 before:left-0 before:w-[4px] ", "")}`}
+                        className={`relative overflow-hidden rounded-[24px] border border-[#ddd8ce] bg-white px-4 py-4 shadow-[0_10px_20px_rgba(15,23,42,0.05)] before:absolute before:inset-x-0 before:top-0 before:h-[3px] sm:px-5 sm:py-5 ${card.accent.replace("before:inset-y-0 before:left-0 before:w-[4px] ", "")}`}
                     >
                         <div className="space-y-5">
                             <div className="flex items-start justify-between gap-4">
@@ -488,7 +488,7 @@ export default async function DashboardPrincipalPage({
                 ))}
             </section>
 
-            <section className={`${SURFACE_CARD} px-8 py-8`}>
+            <section className={`${SURFACE_CARD} px-4 py-5 sm:px-8 sm:py-8`}>
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
                         <p className={SECTION_EYEBROW}>Cómo se movió tu negocio (7d)</p>

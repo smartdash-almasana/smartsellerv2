@@ -37,7 +37,7 @@ const triggerRows = [
 
 const SURFACE_CARD = "rounded-[28px] border border-[#ddd8ce] bg-white shadow-[0_10px_22px_rgba(15,23,42,0.06)]";
 const SURFACE_INSET = "rounded-[20px] border border-[#e8e3da]";
-const SECTION_EYEBROW = "text-[10px] font-black uppercase tracking-[0.3em] text-[#616775]";
+const SECTION_EYEBROW = "text-[9px] font-black uppercase tracking-[0.16em] text-[#616775] sm:text-[10px] sm:tracking-[0.3em]";
 const CHIP_BASE = "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em]";
 
 export default function AlertsCenterPage() {
@@ -59,7 +59,7 @@ export default function AlertsCenterPage() {
     });
 
     return (
-        <div className="mx-auto w-full max-w-6xl">
+        <div className="mx-auto w-full max-w-6xl px-2 sm:px-0">
             <section className="mb-8">
                 <h1 className="text-2xl font-black tracking-[-0.03em] text-[#07163d] sm:text-[2.7rem]">Notificaciones y alertas</h1>
                 <p className="mt-3 max-w-4xl text-[0.92rem] leading-7 text-slate-700 sm:text-[1rem] sm:leading-[1.45]">
@@ -67,8 +67,8 @@ export default function AlertsCenterPage() {
                 </p>
             </section>
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="space-y-8">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="min-w-0 space-y-7 sm:space-y-8">
                     <section className="space-y-4">
                         <p className={SECTION_EYEBROW}>Como te estamos avisando hoy</p>
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -113,7 +113,7 @@ export default function AlertsCenterPage() {
                                         key={item.key}
                                         type="button"
                                         onClick={() => setChannelsActive((curr) => ({ ...curr, [item.key]: !curr[item.key] }))}
-                                        className={`min-h-[160px] rounded-[18px] border p-5 text-left transition ${
+                                        className={`min-h-[150px] rounded-[18px] border p-4 text-left transition sm:min-h-[160px] sm:p-5 ${
                                             enabled ? "border-[#e6e1d8] bg-white shadow-[0_10px_20px_rgba(15,23,42,0.06)]" : "border-[#e6e1d8] bg-[#f7f7f8]"
                                         }`}
                                     >
@@ -134,7 +134,7 @@ export default function AlertsCenterPage() {
                     <section className="space-y-3">
                         <p className={SECTION_EYEBROW}>Que problemas queres detectar</p>
                         <p className="text-sm font-medium text-slate-600">Elegi las situaciones que SmartSeller va a vigilar por vos.</p>
-                        <div className={`${SURFACE_CARD} p-5`}>
+                        <div className={`${SURFACE_CARD} p-4 sm:p-5`}>
                             <div className="space-y-6">
                                 {problemGroups.map((group) => (
                                     <div key={group.title}>
@@ -175,7 +175,7 @@ export default function AlertsCenterPage() {
                                         key={item.key}
                                         type="button"
                                         onClick={() => setSelectedFreq(item.key)}
-                                        className={`min-h-[136px] rounded-[18px] border p-5 text-left transition ${
+                                        className={`min-h-[124px] rounded-[18px] border p-4 text-left transition sm:min-h-[136px] sm:p-5 ${
                                             active ? "border-[#031a44] bg-[#031a44] text-white shadow-[0_12px_28px_rgba(3,26,68,0.24)]" : "border-[#ebe6dc] bg-white text-slate-800"
                                         }`}
                                     >
@@ -189,7 +189,7 @@ export default function AlertsCenterPage() {
                     </section>
 
                     <section className="space-y-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <p className={SECTION_EYEBROW}>Configuracion de umbrales</p>
                                 <p className="mt-1 text-sm text-slate-600">Defini los limites para disparar alertas.</p>
@@ -202,7 +202,7 @@ export default function AlertsCenterPage() {
                         <div className={`${SURFACE_CARD}`}>
                             {/* Desktop/tablet: grid table */}
                             <div className="hidden sm:block">
-                                <div className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] border-b border-[#efebe4] px-5 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                                <div className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] border-b border-[#efebe4] px-4 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:px-5">
                                     <span>Regla</span>
                                     <span>Valor</span>
                                     <span>Unidad</span>
@@ -210,7 +210,7 @@ export default function AlertsCenterPage() {
                                 </div>
                                 <div className="divide-y divide-[#efebe4]">
                                     {triggerRows.map((row) => (
-                                        <div key={row.rule} className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] items-center px-5 py-4">
+                                        <div key={row.rule} className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] items-center px-4 py-4 sm:px-5">
                                             <p className="text-sm font-semibold text-slate-800">{row.rule}</p>
                                             <div className="w-14 rounded-[8px] bg-slate-100 px-3 py-2 text-center text-sm font-black text-slate-900">{row.value}</div>
                                             <p className="text-sm text-slate-600">{row.unit}</p>
@@ -222,7 +222,7 @@ export default function AlertsCenterPage() {
                             {/* Mobile: stacked cards */}
                             <div className="divide-y divide-[#efebe4] sm:hidden">
                                 {triggerRows.map((row) => (
-                                    <div key={row.rule} className="flex flex-col gap-3 px-5 py-4">
+                                    <div key={row.rule} className="flex flex-col gap-3 px-4 py-4 sm:px-5">
                                         <p className="text-sm font-semibold leading-5 text-slate-800">{row.rule}</p>
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex items-center gap-3">
@@ -252,7 +252,7 @@ export default function AlertsCenterPage() {
                             ].map((channel) => {
                                 const Icon = channel.icon;
                                 return (
-                                    <div key={channel.title} className="flex min-h-[88px] flex-col items-start gap-4 rounded-[18px] border border-[#e8e3da] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between">
+                                    <div key={channel.title} className="flex min-h-[84px] flex-col items-start gap-3 rounded-[18px] border border-[#e8e3da] bg-white px-3 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)] sm:min-h-[88px] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4 sm:py-4">
                                         <div className="flex min-w-0 items-center gap-3">
                                             <span className="inline-flex h-11 w-11 items-center justify-center rounded-[10px] bg-[#eef1f6] text-slate-600">
                                                 <Icon className="h-5 w-5" />
@@ -271,8 +271,8 @@ export default function AlertsCenterPage() {
 
                     <section className="space-y-4">
                         <p className={SECTION_EYEBROW}>Disponibilidad de atencion</p>
-                        <div className={`${SURFACE_CARD} p-5`}>
-                            <div className="grid gap-6 md:grid-cols-[1fr_240px]">
+                        <div className={`${SURFACE_CARD} p-4 sm:p-5`}>
+                            <div className="grid gap-4 sm:gap-6 md:grid-cols-[1fr_240px]">
                                 <div className="space-y-3">
                                     {[
                                         { key: "full" as const, label: "Alertas activas 24/7" },
@@ -302,12 +302,12 @@ export default function AlertsCenterPage() {
                     </section>
                 </div>
 
-                <aside className="order-first space-y-4 lg:order-none lg:sticky lg:top-6 lg:h-fit">
+                <aside className="order-first min-w-0 space-y-4 lg:order-none lg:sticky lg:top-6 lg:h-fit">
                     <section className={`${SURFACE_CARD} p-5`}>
                         <h2 className="text-[1.55rem] font-black leading-8 tracking-[-0.02em] text-[#07163d]">Atencion inmediata</h2>
                         <p className="mt-2 text-[0.78rem] leading-6 text-slate-600">Resumen del estado operativo y disparadores recientes.</p>
 
-                        <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="mt-4 grid grid-cols-1 gap-2 min-[320px]:grid-cols-2">
                             <div className="rounded-[14px] bg-slate-50 p-3">
                                 <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Total</p>
                                 <p className="mt-2 text-[1.85rem] font-black text-slate-900">24</p>
@@ -332,7 +332,7 @@ export default function AlertsCenterPage() {
                                 { title: "Sin ventas en 7 dias", time: "Hoy, 08:30 AM" },
                                 { title: "Cancelaciones: 40%", time: "Ayer, 21:15 PM" },
                             ].map((item) => (
-                                <div key={item.title} className="flex min-h-[68px] items-center justify-between rounded-[14px] border border-[#e8e3da] px-3 py-3">
+                                <div key={item.title} className="flex min-h-[62px] items-center justify-between rounded-[14px] border border-[#e8e3da] px-3 py-3">
                                     <div>
                                         <p className="text-[0.84rem] font-black text-slate-800">{item.title}</p>
                                         <p className="text-[0.72rem] text-slate-500">{item.time}</p>
