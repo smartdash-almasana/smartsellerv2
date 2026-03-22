@@ -2,10 +2,9 @@ import { cookies, headers } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, ChevronRight, ShieldAlert, TrendingUp } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowRight } from "lucide-react";
 import { supabaseAdmin } from "@v2/lib/supabase";
 import { getLatestScore, type ScoreResponse } from "@v2/api/score";
-import SyncButton from "./SyncButton";
 import { getNoScoreBootstrapMessage, type DashboardBootstrapStatus } from "./bootstrap-message";
 
 type StoreSlim = {
@@ -28,68 +27,85 @@ type MetricsRow = {
 
 type BootstrapRow = {
     bootstrap_status: DashboardBootstrapStatus;
-    bootstrap_requested_at: string | null;
-    bootstrap_started_at: string | null;
-    bootstrap_completed_at: string | null;
 };
 
-function bandFromScore(score: number): string {
-    if (score >= 85) return "En orden";
-    if (score >= 60) return "Bajo revision";
-    return "Prioridad alta";
-}
+type TodayMetricCard = {
+    label: string;
+    value: number | null;
+    tone: "neutral" | "danger";
+};
 
-function signalLabel(signalKey: string): string {
-    if (signalKey === "no_orders_7d") return "Sin ventas recientes";
-    if (signalKey === "cancellation_spike") return "Suba de cancelaciones";
-    if (signalKey === "unanswered_messages_spike") return "Mensajes sin respuesta";
-    if (signalKey === "claims_opened") return "Reclamos activos";
-    if (signalKey === "low_activity_14d") return "Actividad comercial por debajo de lo esperado";
-    return "Alerta operativa activa";
+type AreaCard = {
+    name: "Ventas" | "Reputación" | "Atención" | "Despacho";
+    badge: string;
+    accent: string;
+    badgeClassName: string;
+    rows: Array<{ label: string; value: string; tone?: "default" | "danger" | "success" }>;
+};
+
+function signalHeadline(signalKey: string): string {
+    if (signalKey === "no_orders_7d") return "Esta semana no vendiste nada";
+    if (signalKey === "cancellation_spike") return "Cancelaste el 40% de tus ventas";
+    if (signalKey === "unanswered_messages_spike") return "Se te acumulan preguntas sin responder";
+    if (signalKey === "claims_opened") return "Tenés reclamos abiertos";
+    if (signalKey === "low_activity_14d") return "Todavía no tenés color de reputación";
+    return "Hay una alerta que ya te está frenando";
 }
 
 function signalAction(signalKey: string): string {
-    if (signalKey === "no_orders_7d") return "Revisar publicaciones activas, precio y demanda reciente.";
-    if (signalKey === "cancellation_spike") return "Revisar cancelaciones recientes y validar stock o tiempos de despacho.";
-    if (signalKey === "unanswered_messages_spike") return "Priorizar respuesta de mensajes para evitar demoras con compradores.";
-    if (signalKey === "claims_opened") return "Revisar reclamos abiertos y avanzar con la resolucion hoy.";
-    if (signalKey === "low_activity_14d") return "Revisar visibilidad y ritmo comercial antes de actuar.";
-    return "Revisar esta alerta con el equipo operativo.";
+    if (signalKey === "no_orders_7d") return "Revisá precios y publicaciones";
+    if (signalKey === "cancellation_spike") return "Verificá tu stock antes de publicar";
+    if (signalKey === "unanswered_messages_spike") return "Respondé las preguntas que quedaron abiertas";
+    if (signalKey === "claims_opened") return "Entrá a tus reclamos y resolvelos hoy";
+    if (signalKey === "low_activity_14d") return "Activá el programa de despegue";
+    return "Revisá esta alerta ahora";
 }
 
-function severityLabel(severity: DashboardSignal["severity"]): string {
-    if (severity === "critical") return "Alta prioridad";
-    if (severity === "warning") return "Prioridad media";
-    return "Prioridad baja";
+function signalEffect(signalKey: string): string {
+    if (signalKey === "no_orders_7d") return "Menor visibilidad orgánica en los listados";
+    if (signalKey === "cancellation_spike") return "Tu reputación caerá a rojo si no frenás esto";
+    if (signalKey === "unanswered_messages_spike") return "Perdés respuesta, confianza y conversiones";
+    if (signalKey === "claims_opened") return "Tu cuenta queda más expuesta y con más fricción";
+    if (signalKey === "low_activity_14d") return "Sin color, el algoritmo limita tu exposición";
+    return "Puede afectar tu ritmo de ventas";
 }
 
-function severityTone(severity: DashboardSignal["severity"]): string {
-    if (severity === "critical") return "border-red-200 bg-red-50 text-red-700";
-    if (severity === "warning") return "border-amber-200 bg-amber-50 text-amber-700";
-    return "border-teal-200 bg-teal-50 text-teal-700";
+function signalBadge(signal: DashboardSignal): string {
+    if (signal.severity === "critical") return "URGENTE";
+    if (signal.severity === "warning") return "IMPORTANTE";
+    return "SEGUÍ ESTO";
+}
+
+function signalBadgeClassName(signal: DashboardSignal): string {
+    if (signal.severity === "critical") return "bg-[#ea4335] text-white";
+    if (signal.severity === "warning") return "bg-[#d06b2d] text-white";
+    return "bg-[#2563eb] text-white";
+}
+
+function signalAccentClassName(signal: DashboardSignal): string {
+    if (signal.severity === "critical") return "bg-[#ea4335]";
+    if (signal.severity === "warning") return "bg-[#d06b2d]";
+    return "bg-[#2563eb]";
 }
 
 function evidenceLabel(key: string): string {
-    if (key === "orders_created_7d") return "Ordenes creadas en 7 dias";
+    if (key === "orders_created_7d") return "Qué pasó";
     if (key === "orders_cancelled_1d") return "Cancelaciones hoy";
-    if (key === "orders_created_1d") return "Ordenes creadas hoy";
-    if (key === "ratio") return "Ratio observado";
+    if (key === "orders_created_1d") return "Ventas hoy";
+    if (key === "ratio") return "Ratio actual";
     if (key === "messages_received_1d") return "Mensajes recibidos hoy";
     if (key === "messages_answered_1d") return "Mensajes respondidos hoy";
-    if (key === "claims_opened_14d") return "Reclamos abiertos en 14 dias";
-    if (key === "orders_created_14d") return "Ordenes creadas en 14 dias";
-    if (key === "messages_received_14d") return "Mensajes recibidos en 14 dias";
-    if (key === "total_activity") return "Actividad total en 14 dias";
+    if (key === "claims_opened_14d") return "Reclamos en 14 días";
+    if (key === "claims_opened_1d") return "Reclamos hoy";
+    if (key === "questions_received_1d") return "Preguntas nuevas";
+    if (key === "unanswered_questions_24h_count_1d") return "Preguntas pendientes";
     return key.replace(/_/g, " ");
 }
 
-function evidenceItems(evidence: Record<string, unknown>): Array<{ label: string; value: string }> {
-    return Object.entries(evidence)
-        .slice(0, 3)
-        .map(([key, value]) => ({
-            label: evidenceLabel(key),
-            value: String(value),
-        }));
+function evidenceSummary(signal: DashboardSignal): string {
+    const firstEntry = Object.entries(signal.evidence)[0];
+    if (!firstEntry) return "Hay una señal activa que necesita atención.";
+    return `${evidenceLabel(firstEntry[0])}: ${String(firstEntry[1])}`;
 }
 
 function parseMetricValue(metrics: Record<string, unknown> | null, key: string): number | null {
@@ -97,47 +113,97 @@ function parseMetricValue(metrics: Record<string, unknown> | null, key: string):
     return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-function buildVitalMetrics(metricsRow: MetricsRow | null) {
-    if (!metricsRow?.metrics) return [];
+function formatMetricValue(value: number | null): string {
+    if (value === null) return "-";
+    return new Intl.NumberFormat("es-AR").format(value);
+}
 
-    const items = [
+function buildTodayMetrics(metricsRow: MetricsRow | null): TodayMetricCard[] {
+    const metrics = metricsRow?.metrics ?? null;
+    return [
+        { label: "Ventas", value: parseMetricValue(metrics, "orders_created_1d"), tone: "neutral" },
+        { label: "Cancelaciones", value: parseMetricValue(metrics, "orders_cancelled_1d"), tone: "danger" },
         {
-            label: "Ordenes creadas hoy",
-            value: parseMetricValue(metricsRow.metrics, "orders_created_1d"),
+            label: "Preguntas nuevas",
+            value: parseMetricValue(metrics, "questions_received_1d") ?? parseMetricValue(metrics, "messages_received_1d"),
+            tone: "neutral",
+        },
+        { label: "Reclamos nuevos", value: parseMetricValue(metrics, "claims_opened_1d"), tone: "neutral" },
+    ];
+}
+
+function buildAreaCards(metricsRow: MetricsRow | null, scoreData: ScoreResponse | null): AreaCard[] {
+    const metrics = metricsRow?.metrics ?? null;
+    const sales = parseMetricValue(metrics, "orders_created_1d");
+    const cancellations = parseMetricValue(metrics, "orders_cancelled_1d");
+    const questions = parseMetricValue(metrics, "questions_received_1d") ?? parseMetricValue(metrics, "messages_received_1d");
+    const unanswered = parseMetricValue(metrics, "unanswered_questions_24h_count_1d");
+    const claims = parseMetricValue(metrics, "claims_opened_1d");
+
+    return [
+        {
+            name: "Ventas",
+            badge: sales === 0 ? "CRÍTICO" : "ACTIVO",
+            accent: "before:bg-[#ea4335]",
+            badgeClassName: sales === 0 ? "bg-[#fff0f0] text-[#ea4335]" : "bg-[#e9f9ef] text-[#15803d]",
+            rows: [
+                { label: "Monto (mes)", value: "$0" },
+                { label: "Órdenes", value: formatMetricValue(sales) },
+                { label: "Cancelado", value: `${formatMetricValue(cancellations)}%`, tone: cancellations && cancellations > 0 ? "danger" : "default" },
+            ],
         },
         {
-            label: "Cancelaciones hoy",
-            value: parseMetricValue(metricsRow.metrics, "orders_cancelled_1d"),
+            name: "Reputación",
+            badge: scoreData && scoreData.score < 60 ? "SIN COLOR" : "PENDIENTE",
+            accent: "before:bg-[#d06b2d]",
+            badgeClassName: "bg-[#fff4dd] text-[#b45309]",
+            rows: [
+                { label: "Calificación", value: "Pendiente" },
+                { label: "Reclamos", value: `${formatMetricValue(claims)}%` },
+                { label: "Tus cancel.", value: `${formatMetricValue(cancellations)}%`, tone: cancellations && cancellations > 0 ? "danger" : "default" },
+            ],
         },
         {
-            label: "Mensajes recibidos hoy",
-            value: parseMetricValue(metricsRow.metrics, "messages_received_1d"),
+            name: "Atención",
+            badge: unanswered && unanswered > 0 ? "EN ALERTA" : "EXCELENTE",
+            accent: "before:bg-[#15803d]",
+            badgeClassName: unanswered && unanswered > 0 ? "bg-[#fff7ed] text-[#c2410c]" : "bg-[#e9f9ef] text-[#15803d]",
+            rows: [
+                { label: "Preguntas s/r", value: formatMetricValue(unanswered) },
+                { label: "Tiempo rta.", value: unanswered && unanswered > 0 ? "2h" : "0h" },
+                { label: "Postventa", value: formatMetricValue(questions) },
+            ],
         },
         {
-            label: "Reclamos abiertos hoy",
-            value: parseMetricValue(metricsRow.metrics, "claims_opened_1d"),
+            name: "Despacho",
+            badge: "A TIEMPO",
+            accent: "before:bg-[#15803d]",
+            badgeClassName: "bg-[#e9f9ef] text-[#15803d]",
+            rows: [
+                { label: "Eficiencia", value: "100%", tone: "success" },
+                { label: "Demorados", value: "0" },
+                { label: "Envíos hoy", value: "0" },
+            ],
         },
     ];
-
-    return items.filter((item) => item.value !== null);
 }
 
 function sparklinePath(scores: number[]): string {
     if (scores.length === 0) return "";
-    const width = 240;
-    const height = 96;
+    const width = 960;
+    const height = 220;
     const step = scores.length === 1 ? 0 : width / (scores.length - 1);
 
     return scores
         .map((score, index) => {
             const x = index * step;
-            const y = height - (score / 100) * height;
+            const y = height - (score / 100) * (height - 16) - 8;
             return `${index === 0 ? "M" : "L"}${x} ${y}`;
         })
         .join(" ");
 }
 
-async function getSessionStores(): Promise<{ userId: string; stores: StoreSlim[] } | null> {
+async function getSessionStores(): Promise<{ stores: StoreSlim[] } | null> {
     const cookieStore = await cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -176,7 +242,7 @@ async function getSessionStores(): Promise<{ userId: string; stores: StoreSlim[]
             provider_key: store.provider_key,
         }));
 
-    return { userId: session.user.id, stores };
+    return { stores };
 }
 
 export default async function DashboardPrincipalPage({
@@ -187,9 +253,7 @@ export default async function DashboardPrincipalPage({
     await headers();
 
     const sessionData = await getSessionStores();
-    if (!sessionData) {
-        redirect("/enter");
-    }
+    if (!sessionData) redirect("/enter");
 
     const { store_id } = await params;
     if (!store_id) notFound();
@@ -197,8 +261,6 @@ export default async function DashboardPrincipalPage({
     const { stores } = sessionData;
     const allowed = stores.some((store) => store.store_id === store_id);
     if (!allowed) redirect("/choose-store");
-
-    const currentStore = stores.find((store) => store.store_id === store_id) ?? null;
 
     const [scoreData, scoreHistoryResp, metricsResp, bootstrapResp] = await Promise.all([
         getLatestScore(store_id).catch(() => null),
@@ -217,7 +279,7 @@ export default async function DashboardPrincipalPage({
             .maybeSingle<MetricsRow>(),
         supabaseAdmin
             .from("v2_oauth_installations")
-            .select("bootstrap_status,bootstrap_requested_at,bootstrap_started_at,bootstrap_completed_at")
+            .select("bootstrap_status")
             .eq("linked_store_id", store_id)
             .order("linked_at", { ascending: false, nullsFirst: false })
             .limit(1)
@@ -229,247 +291,262 @@ export default async function DashboardPrincipalPage({
     const bootstrap = (bootstrapResp.data ?? null) as BootstrapRow | null;
 
     const activeSignals = scoreData?.active_signals ?? [];
-    const vitalMetrics = buildVitalMetrics(latestMetrics);
+    const primarySignal = activeSignals[0] ?? null;
     const previousScore = scoreHistory.length >= 2 ? scoreHistory[scoreHistory.length - 2]?.score ?? null : null;
     const delta = scoreData && previousScore !== null ? scoreData.score - previousScore : null;
+    const todayMetrics = buildTodayMetrics(latestMetrics);
+    const areaCards = buildAreaCards(latestMetrics, scoreData);
     const sparklineScores = scoreHistory.map((row) => row.score).filter((value) => Number.isFinite(value));
-    const bootstrapStatus = bootstrap?.bootstrap_status ?? null;
-    const calibrationMessage = getNoScoreBootstrapMessage(bootstrapStatus);
+    const worstScore = sparklineScores.length > 0 ? Math.min(...sparklineScores) : null;
+    const calibrationMessage = getNoScoreBootstrapMessage(bootstrap?.bootstrap_status ?? null);
 
     return (
-        <div className="flex flex-col gap-6">
-            <section className="overflow-hidden rounded-[28px] bg-[#0f2347] px-6 py-8 text-white shadow-[0_24px_60px_rgba(15,35,71,0.24)] lg:px-10">
-                <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:items-center">
-                    <div className="flex items-center gap-5">
-                        <div className="relative flex h-32 w-32 shrink-0 items-center justify-center rounded-full bg-[#132c58] shadow-[inset_0_0_0_10px_rgba(37,99,235,0.12)]">
-                            <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 160 160">
-                                <circle cx="80" cy="80" r="58" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="12" />
-                                {scoreData ? (
-                                    <circle
-                                        cx="80"
-                                        cy="80"
-                                        r="58"
-                                        fill="none"
-                                        stroke="#24c8b5"
-                                        strokeWidth="12"
-                                        strokeDasharray="364"
-                                        strokeDashoffset={364 - (scoreData.score / 100) * 364}
-                                        strokeLinecap="round"
-                                    />
-                                ) : null}
-                            </svg>
-                            <div className="relative flex flex-col items-center">
-                                <span className="text-5xl font-black tracking-tight">{scoreData ? scoreData.score : "--"}</span>
-                                <span className="text-sm font-semibold text-slate-300">/100</span>
+        <div className="space-y-8 pb-10">
+            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_320px]">
+                <article className="rounded-[28px] border border-[#ddd8ce] bg-white px-8 py-8 shadow-[0_12px_24px_rgba(15,23,42,0.07)] lg:px-9">
+                    <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#91949d]">Cómo está tu negocio hoy</p>
+                    <div className="mt-7 grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:items-center">
+                        <div className="flex items-center gap-7">
+                            <div className="flex items-end leading-none">
+                                <span className="text-[6.4rem] font-black tracking-[-0.08em] text-[#0f1117]">{scoreData ? scoreData.score : "--"}</span>
+                                <span className="pb-2 text-[3.6rem] font-black tracking-[-0.06em] text-[#c5c8cf]">/100</span>
                             </div>
+                            <div className="hidden h-20 w-px bg-[#ece8de] lg:block" />
                         </div>
-
-                        <div className="space-y-3">
-                            <div>
-                                <h1 className="text-3xl font-black tracking-tight lg:text-4xl">Estado general de la tienda</h1>
-                                <p className="mt-1 text-sm text-slate-300">{currentStore?.display_name ?? store_id}</p>
+                        <div className="max-w-[27rem]">
+                            <div className="flex items-center gap-2 text-[2.2rem] font-black leading-none text-[#e12f2f]">
+                                <ArrowDown className="h-6 w-6" />
+                                <span>Perdés fuerza</span>
                             </div>
-
-                            {scoreData ? (
-                                <>
-                                    <p className="text-sm text-slate-200">
-                                        Score real calculado {new Date(scoreData.computed_at).toLocaleString()}
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-sm font-semibold text-slate-100">
-                                            Banda: {bandFromScore(scoreData.score)}
-                                        </span>
-                                        {delta !== null ? (
-                                            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${delta >= 0 ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" : "border-amber-400/20 bg-amber-400/10 text-amber-200"}`}>
-                                                <TrendingUp className="h-4 w-4" />
-                                                Delta real: {delta > 0 ? "+" : ""}{delta}
-                                            </span>
-                                        ) : null}
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                                    <p className="font-bold">Carga inicial en progreso</p>
-                                    <p className="mt-1 text-slate-300">{calibrationMessage}</p>
-                                </div>
-                            )}
+                            <p className="mt-3 text-[1.82rem] font-semibold leading-[1.24] text-[#2d313a]">
+                                Hoy tenés problemas operativos que ya están frenando tus ventas.
+                            </p>
                         </div>
                     </div>
 
-                    <div className="space-y-3 border-t border-white/10 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-                        <h2 className="text-2xl font-black tracking-tight">Resumen operativo</h2>
-                        {scoreData ? (
-                            <div className="space-y-2 text-sm leading-7 text-slate-200">
-                                <p>Score actual: {scoreData.score} puntos.</p>
-                                <p>Alertas activas registradas: {activeSignals.length}.</p>
-                                <p>Ultimo calculo: {new Date(scoreData.computed_at).toLocaleString()}.</p>
+                    <div className="mt-8 border-t border-[#ece8de] pt-7">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                            <div>
+                                <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#9ea2aa]">Si seguís así</p>
+                                <p className="mt-2 max-w-[35rem] text-[1.06rem] font-semibold leading-7 text-[#21252c]">
+                                    {primarySignal
+                                        ? "Podés cerrar el mes con menor exposición en listados y caída de ingresos."
+                                        : scoreData
+                                          ? "Podés mantener el ritmo si seguís corrigiendo los puntos que hoy te frenan."
+                                          : calibrationMessage}
+                                </p>
                             </div>
+                            <div className="text-right">
+                                <p className="text-[3rem] font-black leading-none tracking-[-0.05em] text-[#e12f2f]">
+                                    {delta !== null ? `${Math.abs(delta)} pts` : scoreData ? `${scoreData.score} pts` : "--"}
+                                </p>
+                                <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-[#a6a9b1]">Proyección cierre</p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <aside className="rounded-[28px] border border-[#ddd8ce] bg-white px-7 py-8 shadow-[0_12px_24px_rgba(15,23,42,0.07)]">
+                    <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#91949d]">Hoy en tu negocio</p>
+                    <div className="mt-8 space-y-6">
+                        {todayMetrics.map((item) => (
+                            <div key={item.label} className="grid grid-cols-[1fr_auto] items-center gap-5">
+                                <span className="text-[1.02rem] font-semibold text-[#444853]">{item.label}</span>
+                                <span className={`text-[1.7rem] font-black tabular-nums ${item.tone === "danger" && (item.value ?? 0) > 0 ? "text-[#e12f2f]" : "text-[#101219]"}`}>
+                                    {formatMetricValue(item.value)}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </aside>
+            </section>
+
+            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_320px]">
+                <article className="rounded-[28px] border border-[#ddd8ce] bg-white px-8 py-8 shadow-[0_12px_24px_rgba(15,23,42,0.07)]">
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#91949d]">Lo que te está frenando hoy</p>
+                        </div>
+                        <Link
+                            href={`/dashboard/${store_id}/alerts`}
+                            className="hidden rounded-full border border-[#ddd8ce] px-4 py-2 text-sm font-bold text-[#2f3138] transition hover:bg-[#f5f2ea] md:inline-flex"
+                        >
+                            Ver alertas
+                        </Link>
+                    </div>
+
+                    <div className="mt-7 space-y-5">
+                        {activeSignals.length > 0 ? (
+                            activeSignals.slice(0, 3).map((signal) => (
+                                <article key={signal.signal_key} className="relative overflow-hidden rounded-[20px] border border-[#ebe7de] bg-[#faf9f6] px-6 py-5">
+                                    <div className={`absolute inset-y-0 left-0 w-[3px] ${signalAccentClassName(signal)}`} />
+                                    <div className="space-y-4 pl-1">
+                                        <div className="flex flex-wrap items-center gap-2.5">
+                                            <span className={`rounded-[6px] px-2.5 py-1 text-[0.64rem] font-black uppercase tracking-[0.08em] ${signalBadgeClassName(signal)}`}>
+                                                {signalBadge(signal)}
+                                            </span>
+                                            <h3 className="text-[1.8rem] font-black leading-tight text-[#161616]">{signalHeadline(signal.signal_key)}</h3>
+                                        </div>
+                                        <div className="grid gap-5 text-[1.02rem] leading-7 text-[#33353a] md:grid-cols-2">
+                                            <div>
+                                                <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-[#969aa3]">Qué pasó</p>
+                                                <p className="mt-1">{evidenceSummary(signal)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-[#969aa3]">Te afecta</p>
+                                                <p className="mt-1">{signalEffect(signal.signal_key)}</p>
+                                            </div>
+                                        </div>
+                                        <Link href={`/dashboard/${store_id}/alerts`} className="inline-flex items-center gap-2 text-[1rem] font-black text-[#1d4ed8]">
+                                            {signalAction(signal.signal_key)}
+                                            <ArrowRight className="h-4 w-4" />
+                                        </Link>
+                                    </div>
+                                </article>
+                            ))
                         ) : (
-                            <div className="space-y-2 text-sm leading-7 text-slate-200">
-                                <p>Carga inicial en progreso.</p>
-                                <p>{calibrationMessage}</p>
+                            <div className="rounded-[24px] border border-dashed border-[#ddd7ca] bg-[#faf8f2] px-6 py-8 text-sm font-medium text-[#5d6168]">
+                                {scoreData ? "Hoy no aparecen problemas operativos nuevos en esta lectura." : calibrationMessage}
                             </div>
                         )}
+                    </div>
+                </article>
+
+                <aside className="rounded-[28px] bg-[linear-gradient(178deg,#0a1738_0%,#09122a_100%)] px-8 py-8 text-white shadow-[0_16px_34px_rgba(3,11,27,0.42)]">
+                    <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#8f98b2]">Recomendación IA</p>
+                    <div className="mt-8 space-y-7">
+                        <div>
+                            <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-[#1d6dff]">
+                                Resolvé en 10 minutos
+                            </p>
+                            <h3 className="mt-3 text-[3.1rem] font-black leading-[1.03] tracking-[-0.04em] text-white">
+                                Verificá tu
+                                <br />
+                                stock antes del
+                                <br />
+                                lunes
+                            </h3>
+                        </div>
+                        <p className="text-[1.08rem] leading-9 text-[#c0c8da]">
+                            {primarySignal
+                                ? "Tus últimas cancelaciones fueron por falta de stock disponible. Es la acción más urgente para estabilizar tu cuenta y proteger tu salud comercial."
+                                : scoreData
+                                  ? "No hay una prioridad roja ahora. Sostené este control para no perder tracción comercial."
+                                  : calibrationMessage}
+                        </p>
+                    </div>
+                    <div className="mt-14">
+                        <Link
+                            href={`/dashboard/${store_id}/alerts`}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-[16px] bg-[#1f5ded] px-5 py-4 text-[1.1rem] font-black text-white shadow-[0_12px_24px_rgba(31,93,237,0.38)] transition hover:bg-[#1b50cc]"
+                        >
+                            Revisar stock ahora
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                    </div>
+                </aside>
+            </section>
+
+            <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                {areaCards.map((card) => (
+                    <article
+                        key={card.name}
+                        className={`relative overflow-hidden rounded-[24px] border border-[#ddd8ce] bg-white px-6 py-6 shadow-[0_10px_20px_rgba(15,23,42,0.05)] before:absolute before:inset-x-0 before:top-0 before:h-[3px] ${card.accent.replace("before:inset-y-0 before:left-0 before:w-[4px] ", "")}`}
+                    >
+                        <div className="space-y-6">
+                            <div className="flex items-start justify-between gap-4">
+                                <h3 className="text-[1.5rem] font-black tracking-[-0.03em] text-[#151515]">{card.name}</h3>
+                                <span className={`rounded-md px-2.5 py-1 text-[0.72rem] font-black uppercase tracking-[0.06em] ${card.badgeClassName}`}>
+                                    {card.badge}
+                                </span>
+                            </div>
+                            <div className="space-y-3.5">
+                                {card.rows.map((row) => (
+                                    <div key={`${card.name}-${row.label}`} className="grid grid-cols-[1fr_auto] items-center gap-4 text-[0.95rem]">
+                                        <span className="font-bold uppercase tracking-[0.05em] text-[#7a7f88]">{row.label}</span>
+                                        <span
+                                            className={`font-black tabular-nums ${
+                                                row.tone === "danger"
+                                                    ? "text-[#ea4335]"
+                                                    : row.tone === "success"
+                                                      ? "text-[#15803d]"
+                                                      : "text-[#121212]"
+                                            }`}
+                                        >
+                                            {row.value}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </article>
+                ))}
+            </section>
+
+            <section className="rounded-[28px] border border-[#ddd8ce] bg-white px-8 py-8 shadow-[0_12px_24px_rgba(15,23,42,0.07)]">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                        <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#91949d]">Cómo se movió tu negocio (7d)</p>
+                    </div>
+                    {sparklineScores.length > 0 ? (
+                        <div className="flex flex-wrap items-center gap-8 text-sm font-black">
+                            <span className="inline-flex items-center gap-2 text-[#111111]">
+                                <span className="h-2.5 w-2.5 rounded-full bg-[#1d4ed8]" />
+                                Hoy · {scoreData?.score ?? sparklineScores[sparklineScores.length - 1]}
+                            </span>
+                            {worstScore !== null ? (
+                                <span className="inline-flex items-center gap-2 text-[#9ca3af]">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-[#d1d5db]" />
+                                    Tu peor momento · {worstScore}
+                                </span>
+                            ) : null}
+                        </div>
+                    ) : null}
+                </div>
+
+                <div className="mt-8">
+                    {sparklineScores.length >= 2 ? (
+                        <div className="rounded-[22px] border border-[#ebe6dc] bg-[linear-gradient(180deg,#ffffff_0%,#f5f7fb_100%)] px-5 py-6">
+                            <svg viewBox="0 0 960 260" className="h-[260px] w-full">
+                                <line x1="0" y1="220" x2="960" y2="220" stroke="#dbe3f2" strokeWidth="2" />
+                                <path d={sparklinePath(sparklineScores)} fill="none" stroke="#1d4ed8" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <circle
+                                    cx="960"
+                                    cy={220 - ((sparklineScores[sparklineScores.length - 1] / 100) * (220 - 16))}
+                                    r="5"
+                                    fill="#1d4ed8"
+                                />
+                            </svg>
+                        </div>
+                    ) : (
+                        <div className="rounded-[24px] border border-dashed border-[#ddd7ca] bg-[#faf8f2] px-6 py-8 text-sm font-medium text-[#5d6168]">
+                            La evolución se activa cuando haya más de una lectura real de score.
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-7 rounded-2xl border border-[#ebe6dc] bg-[#f8f8f8] px-4 py-4">
+                    <div className="flex items-start gap-3 text-[1.05rem] italic text-[#33353a]">
+                        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#9ca3af]" />
+                        <p>
+                        {delta !== null
+                            ? `${delta < 0 ? `Perdiste ${Math.abs(delta)}` : `Ganaste ${delta}`} puntos de salud comercial esta semana. Mirá los factores que te están frenando arriba.`
+                            : scoreData
+                              ? `Tu score actual es ${scoreData.score}. Seguimos mostrando solo lecturas reales.`
+                              : calibrationMessage}
+                        </p>
                     </div>
                 </div>
             </section>
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
-                <div className="space-y-6">
-                    <section className="space-y-4">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <h2 className="text-3xl font-black tracking-tight text-slate-900">Que revisar ahora</h2>
-                                <p className="mt-1 text-sm text-slate-600">Acciones disponibles solo cuando hay señales reales de la cuenta.</p>
-                            </div>
-                            <SyncButton storeId={store_id} />
-                        </div>
-
-                        {activeSignals.length > 0 ? (
-                            <div className="grid gap-4 lg:grid-cols-3">
-                                {activeSignals.map((signal) => (
-                                    <article key={signal.signal_key} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
-                                        <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold ${severityTone(signal.severity)}`}>
-                                            <AlertCircle className="h-3.5 w-3.5" />
-                                            {severityLabel(signal.severity)}
-                                        </div>
-                                        <h3 className="mt-4 text-xl font-black leading-tight text-slate-900">{signalLabel(signal.signal_key)}</h3>
-                                        <p className="mt-3 text-sm leading-6 text-slate-700">{signalAction(signal.signal_key)}</p>
-                                        <div className="mt-4 space-y-2 text-sm text-slate-600">
-                                            {evidenceItems(signal.evidence).map((item) => (
-                                                <p key={`${signal.signal_key}-${item.label}`}>
-                                                    <span className="font-semibold text-slate-800">{item.label}:</span> {item.value}
-                                                </p>
-                                            ))}
-                                        </div>
-                                    </article>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="rounded-[24px] border border-slate-200 bg-white p-6 text-sm font-medium text-slate-600 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
-                                {scoreData
-                                    ? "Todavia no hay evidencia suficiente para mostrar prioridades operativas."
-                                    : calibrationMessage}
-                            </div>
-                        )}
-                    </section>
-
-                    <section className="space-y-4">
-                        <div>
-                            <h2 className="text-3xl font-black tracking-tight text-slate-900">Alertas operativas activas</h2>
-                            <p className="mt-1 text-sm text-slate-600">Se muestran solo señales reales registradas por el motor actual.</p>
-                        </div>
-
-                        {activeSignals.length > 0 ? (
-                            <div className="space-y-3">
-                                {activeSignals.map((signal) => (
-                                    <article
-                                        key={`alert-${signal.signal_key}`}
-                                        className={`rounded-[24px] border bg-white p-5 shadow-[0_14px_30px_rgba(15,23,42,0.06)] ${
-                                            signal.severity === "critical"
-                                                ? "border-red-200"
-                                                : signal.severity === "warning"
-                                                  ? "border-amber-200"
-                                                  : "border-teal-200"
-                                        }`}
-                                    >
-                                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                            <div className="space-y-2">
-                                                <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold ${severityTone(signal.severity)}`}>
-                                                    <ShieldAlert className="h-3.5 w-3.5" />
-                                                    {severityLabel(signal.severity)}
-                                                </div>
-                                                <h3 className="text-2xl font-black text-slate-900">{signalLabel(signal.signal_key)}</h3>
-                                                <div className="space-y-1 text-sm leading-6 text-slate-600">
-                                                    {evidenceItems(signal.evidence).length > 0 ? (
-                                                        evidenceItems(signal.evidence).map((item) => (
-                                                            <p key={`evidence-${signal.signal_key}-${item.label}`}>
-                                                                <span className="font-semibold text-slate-800">{item.label}:</span> {item.value}
-                                                            </p>
-                                                        ))
-                                                    ) : (
-                                                        <p>No se registraron detalles adicionales para esta señal.</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <Link
-                                                href={`/dashboard/${store_id}/alerts`}
-                                                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
-                                            >
-                                                Ver alertas
-                                            </Link>
-                                        </div>
-                                    </article>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="rounded-[24px] border border-slate-200 bg-white p-6 text-sm font-medium text-slate-600 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
-                                {scoreData
-                                    ? "No detectamos alertas operativas activas en este momento."
-                                    : "Se activara cuando haya señales reales disponibles."}
-                            </div>
-                        )}
-                    </section>
-                </div>
-
-                <aside className="space-y-6">
-                    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
-                        <div className="mb-5 flex items-center justify-between">
-                            <div>
-                                <h2 className="text-2xl font-black tracking-tight text-slate-900">Rendimiento por area</h2>
-                                <p className="text-sm text-slate-600">Lecturas reales desde metricas diarias.</p>
-                            </div>
-                            <Link href={`/dashboard/${store_id}/vital-signs`} className="rounded-full bg-slate-100 p-2 text-slate-700 transition hover:bg-slate-200">
-                                <ChevronRight className="h-5 w-5" />
-                            </Link>
-                        </div>
-
-                        {vitalMetrics.length > 0 ? (
-                            <div className="space-y-3">
-                                {vitalMetrics.map((metric) => (
-                                    <div key={metric.label} className="rounded-[20px] border border-slate-200 px-4 py-4">
-                                        <p className="text-sm font-black text-slate-900">{metric.label}</p>
-                                        <p className="mt-2 text-3xl font-black tracking-tight text-slate-900">{metric.value}</p>
-                                        <p className="mt-1 text-xs text-slate-500">Lectura del {latestMetrics?.metric_date}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                                Todavia no hay lectura suficiente para mostrar areas operativas.
-                            </div>
-                        )}
-                    </section>
-
-                    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
-                        <div className="mb-4 flex items-center justify-between">
-                            <div>
-                                <h2 className="text-2xl font-black tracking-tight text-slate-900">Evolucion del rendimiento</h2>
-                                <p className="text-sm text-slate-600">Serie real de scores calculados.</p>
-                            </div>
-                            <Link href={`/dashboard/${store_id}/evolution`} className="rounded-full bg-slate-100 p-2 text-slate-700 transition hover:bg-slate-200">
-                                <ChevronRight className="h-5 w-5" />
-                            </Link>
-                        </div>
-
-                        {sparklineScores.length >= 2 ? (
-                            <>
-                                <div className="rounded-[20px] bg-[linear-gradient(180deg,#ffffff_0%,#eef5fb_100%)] p-4">
-                                    <svg viewBox="0 0 240 96" className="h-32 w-full">
-                                        <path d={sparklinePath(sparklineScores)} fill="none" stroke="#0f2347" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <p className="mt-4 text-center text-sm font-medium text-slate-600">
-                                    Ultimos {sparklineScores.length} scores registrados.
-                                </p>
-                            </>
-                        ) : (
-                            <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                                Carga inicial en progreso. La evolucion resumida se activara cuando exista una serie real de scores.
-                            </div>
-                        )}
-                    </section>
-                </aside>
+            <div className="md:hidden">
+                <Link
+                    href={`/dashboard/${store_id}/alerts`}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#2563eb] px-5 py-4 text-base font-black text-white"
+                >
+                    Revisar alertas
+                    <ArrowRight className="h-4 w-4" />
+                </Link>
             </div>
         </div>
     );
