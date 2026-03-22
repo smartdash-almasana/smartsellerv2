@@ -49,6 +49,11 @@ const previewBlocks = [
     { title: "Plan de accion", pages: "Pagina 08" },
 ];
 
+const SURFACE_CARD = "rounded-[28px] border border-[#e5dfd3] bg-white shadow-[0_12px_24px_rgba(15,23,42,0.07)]";
+const SURFACE_INSET = "rounded-[22px] border border-[#ebe6dc]";
+const SECTION_EYEBROW = "text-[11px] font-extrabold uppercase tracking-[0.28em] text-slate-700";
+const CHIP_BASE = "rounded-full px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.08em]";
+
 export default function DashboardReportsPage() {
     const [selectedReport, setSelectedReport] = useState<ReportType>("completo");
     const [selectedRange, setSelectedRange] = useState<RangeType>("30d");
@@ -63,7 +68,7 @@ export default function DashboardReportsPage() {
                 <span className="text-slate-900">Crear reporte</span>
             </div>
 
-            <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_295px]">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="space-y-8">
                     <section>
                         <h1 className="text-4xl font-black tracking-tight text-[#06102c]">Crear reporte</h1>
@@ -75,7 +80,7 @@ export default function DashboardReportsPage() {
                     <section className="space-y-4">
                         <div className="flex items-center gap-3">
                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#031a44] text-[11px] font-black text-white">01</span>
-                            <p className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-slate-700">Tipo de reporte</p>
+                            <p className={SECTION_EYEBROW}>Tipo de reporte</p>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             {reportCards.map((card) => {
@@ -86,14 +91,14 @@ export default function DashboardReportsPage() {
                                         key={card.id}
                                         type="button"
                                         onClick={() => setSelectedReport(card.id)}
-                                        className={`relative rounded-2xl border p-5 text-left transition ${
+                                        className={`relative min-h-[168px] rounded-[22px] border p-5 text-left transition ${
                                             active
                                                 ? "border-[#031a44] bg-[#031a44] text-white shadow-[0_12px_28px_rgba(3,26,68,0.28)]"
-                                                : "border-slate-200 bg-white text-slate-900 hover:border-slate-300"
+                                                : "border-[#ebe6dc] bg-white text-slate-900 hover:border-slate-300"
                                         }`}
                                     >
                                         {card.id === "completo" ? (
-                                            <span className="absolute right-3 top-2 rounded-full bg-[#b5f3b0] px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#0d4921]">
+                                            <span className={`absolute right-3 top-2 bg-[#b5f3b0] text-[#0d4921] ${CHIP_BASE}`}>
                                                 Recomendado
                                             </span>
                                         ) : null}
@@ -108,9 +113,9 @@ export default function DashboardReportsPage() {
                     <section className="space-y-4">
                         <div className="flex items-center gap-3">
                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#031a44] text-[11px] font-black text-white">02</span>
-                            <p className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-slate-700">Periodo de analisis</p>
+                            <p className={SECTION_EYEBROW}>Periodo de analisis</p>
                         </div>
-                        <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                        <div className={`${SURFACE_INSET} bg-white p-3`}>
                             <div className="grid gap-2 sm:grid-cols-4">
                                 {[
                                     { id: "7d" as const, label: "Ultimos 7 dias" },
@@ -122,7 +127,7 @@ export default function DashboardReportsPage() {
                                         key={option.id}
                                         type="button"
                                         onClick={() => setSelectedRange(option.id)}
-                                        className={`rounded-xl px-4 py-3 text-sm font-bold transition ${
+                                        className={`rounded-[16px] px-4 py-3 text-sm font-bold transition ${
                                             selectedRange === option.id
                                                 ? "bg-[#031a44] text-white shadow-[0_8px_18px_rgba(3,26,68,0.25)]"
                                                 : "text-slate-700 hover:bg-slate-50"
@@ -132,7 +137,7 @@ export default function DashboardReportsPage() {
                                     </button>
                                 ))}
                             </div>
-                            <button type="button" className="mt-3 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                            <button type="button" className="mt-3 inline-flex items-center gap-2 rounded-[16px] px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                                 <CalendarDays className="h-4 w-4" />
                                 Personalizar rango
                             </button>
@@ -142,9 +147,9 @@ export default function DashboardReportsPage() {
                     <section className="space-y-4">
                         <div className="flex items-center gap-3">
                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#031a44] text-[11px] font-black text-white">03</span>
-                            <p className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-slate-700">Contenido del reporte</p>
+                            <p className={SECTION_EYEBROW}>Contenido del reporte</p>
                         </div>
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6">
+                        <div className={`${SURFACE_CARD} p-6`}>
                             <div className="grid gap-8 md:grid-cols-2">
                                 <div>
                                     <p className="mb-4 text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-500">Resultados</p>
@@ -189,7 +194,7 @@ export default function DashboardReportsPage() {
                     <section className="space-y-4">
                         <div className="flex items-center gap-3">
                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#031a44] text-[11px] font-black text-white">04</span>
-                            <p className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-slate-700">Foco principal del informe</p>
+                            <p className={SECTION_EYEBROW}>Foco principal del informe</p>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
                             {mainQuestions.map((question, index) => {
@@ -199,10 +204,10 @@ export default function DashboardReportsPage() {
                                         key={question}
                                         type="button"
                                         onClick={() => setSelectedQuestion(index)}
-                                        className={`rounded-2xl border px-5 py-4 text-left text-sm font-semibold leading-6 transition ${
+                                        className={`min-h-[88px] rounded-[22px] border px-5 py-4 text-left text-sm font-semibold leading-6 transition ${
                                             active
                                                 ? "border-[#111827] bg-white text-[#111827] shadow-[0_8px_18px_rgba(15,23,42,0.12)]"
-                                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                                                : "border-[#ebe6dc] bg-white text-slate-700 hover:border-slate-300"
                                         }`}
                                     >
                                         <span className="inline-flex items-center gap-2">
@@ -215,7 +220,7 @@ export default function DashboardReportsPage() {
                         </div>
                     </section>
 
-                    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
+                    <section className={`overflow-hidden ${SURFACE_CARD}`}>
                         <div className="flex flex-col gap-6 border-b border-slate-200 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-4">
                                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#031a44] text-white shadow-[0_10px_20px_rgba(3,26,68,0.22)]">
@@ -257,7 +262,7 @@ export default function DashboardReportsPage() {
                             ].map((item) => {
                                 const Icon = item.icon;
                                 return (
-                                    <div key={item.title} className="rounded-2xl bg-slate-50 px-4 py-4">
+                                    <div key={item.title} className="min-h-[128px] rounded-[22px] bg-slate-50 px-4 py-4">
                                         <Icon className="h-4 w-4 text-slate-500" />
                                         <p className="mt-3 text-sm font-black text-slate-900">{item.title}</p>
                                         <p className="mt-2 text-xs leading-5 text-slate-600">{item.text}</p>
@@ -269,18 +274,18 @@ export default function DashboardReportsPage() {
                 </div>
 
                 <aside className="lg:sticky lg:top-6 lg:h-fit">
-                    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_14px_30px_rgba(15,23,42,0.09)]">
+                    <section className={`${SURFACE_CARD} p-5`}>
                         <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-600">Vista previa</p>
                         <div className="mt-4 space-y-2.5">
                             {previewBlocks.map((block) => (
-                                <div key={block.title} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                                <div key={block.title} className="min-h-[72px] rounded-[16px] border border-[#ebe6dc] bg-slate-50 px-3 py-3">
                                     <p className="text-sm font-bold text-slate-900">{block.title}</p>
                                     <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500">{block.pages}</p>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <div className="mt-4 rounded-[22px] border border-[#ebe6dc] bg-slate-50 px-4 py-4">
                             <p className="text-sm leading-6 text-slate-700">
                                 Se arma un PDF de <span className="font-black text-slate-900">8 paginas</span> con datos del periodo y pasos recomendados para accionar hoy.
                             </p>
@@ -288,13 +293,13 @@ export default function DashboardReportsPage() {
 
                         <button
                             type="button"
-                            className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-[#031a44] px-4 py-3 text-sm font-black uppercase tracking-[0.08em] text-white shadow-[0_10px_22px_rgba(3,26,68,0.28)] transition hover:bg-[#021232]"
+                            className="mt-5 inline-flex w-full items-center justify-center rounded-[16px] bg-[#031a44] px-4 py-3 text-sm font-black uppercase tracking-[0.08em] text-white shadow-[0_10px_22px_rgba(3,26,68,0.28)] transition hover:bg-[#021232]"
                         >
                             Generar reporte PDF
                         </button>
                         <button
                             type="button"
-                            className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                            className="mt-3 inline-flex w-full items-center justify-center rounded-[16px] border border-[#ebe6dc] bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                         >
                             Ver antes de descargar
                         </button>

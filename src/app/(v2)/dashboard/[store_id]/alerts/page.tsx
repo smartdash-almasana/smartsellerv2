@@ -35,6 +35,11 @@ const triggerRows = [
     { rule: "Descenso de salud del negocio en", value: 8, unit: "Puntos semanales", level: "medio" },
 ];
 
+const SURFACE_CARD = "rounded-[28px] border border-[#e5dfd3] bg-white shadow-[0_12px_24px_rgba(15,23,42,0.07)]";
+const SURFACE_INSET = "rounded-[22px] border border-[#ebe6dc]";
+const SECTION_EYEBROW = "text-xs font-black uppercase tracking-[0.22em] text-slate-500";
+const CHIP_BASE = "rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.08em]";
+
 export default function AlertsCenterPage() {
     const [channelsActive, setChannelsActive] = useState({
         whatsapp: true,
@@ -62,10 +67,10 @@ export default function AlertsCenterPage() {
                 </p>
             </section>
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-                <div className="space-y-7">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="space-y-8">
                     <section className="space-y-4">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Como te estamos avisando hoy</p>
+                        <p className={SECTION_EYEBROW}>Como te estamos avisando hoy</p>
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             {[
                                 {
@@ -108,8 +113,8 @@ export default function AlertsCenterPage() {
                                         key={item.key}
                                         type="button"
                                         onClick={() => setChannelsActive((curr) => ({ ...curr, [item.key]: !curr[item.key] }))}
-                                        className={`rounded-2xl border p-5 text-left transition ${
-                                            enabled ? "border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]" : "border-slate-200 bg-slate-50"
+                                        className={`min-h-[176px] rounded-[22px] border p-5 text-left transition ${
+                                            enabled ? "border-[#ebe6dc] bg-white shadow-[0_10px_20px_rgba(15,23,42,0.06)]" : "border-[#ebe6dc] bg-slate-50"
                                         }`}
                                     >
                                         <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
@@ -117,7 +122,7 @@ export default function AlertsCenterPage() {
                                         </span>
                                         <p className="mt-4 text-xl font-black text-slate-900">{item.title}</p>
                                         <p className="mt-1 text-sm font-medium text-slate-600">{item.subtitle}</p>
-                                        <span className={`mt-4 inline-flex rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.08em] ${item.activeTone}`}>
+                                        <span className={`mt-4 inline-flex ${CHIP_BASE} ${item.activeTone}`}>
                                             {enabled ? "ACTIVO" : item.activeLabel}
                                         </span>
                                     </button>
@@ -127,9 +132,9 @@ export default function AlertsCenterPage() {
                     </section>
 
                     <section className="space-y-3">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Que problemas queres detectar</p>
+                        <p className={SECTION_EYEBROW}>Que problemas queres detectar</p>
                         <p className="text-sm font-medium text-slate-600">Elegi las situaciones que SmartSeller va a vigilar por vos.</p>
-                        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                        <div className={`${SURFACE_CARD} p-5`}>
                             <div className="space-y-6">
                                 {problemGroups.map((group) => (
                                     <div key={group.title}>
@@ -140,7 +145,7 @@ export default function AlertsCenterPage() {
                                                     key={item}
                                                     type="button"
                                                     onClick={() => setSelectedProblems((curr) => ({ ...curr, [item]: !curr[item] }))}
-                                                    className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:bg-slate-50"
+                                                    className="flex min-h-[52px] items-center justify-between rounded-[16px] border border-[#ebe6dc] px-4 py-3 text-left hover:bg-slate-50"
                                                 >
                                                     <span className="text-sm font-semibold text-slate-800">{item}</span>
                                                     <span className={`inline-flex h-5 w-5 items-center justify-center rounded-[4px] ${selectedProblems[item] ? "bg-[#07245c] text-white" : "bg-slate-100 text-slate-400"}`}>
@@ -156,7 +161,7 @@ export default function AlertsCenterPage() {
                     </section>
 
                     <section className="space-y-4">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Frecuencia de avisos</p>
+                        <p className={SECTION_EYEBROW}>Frecuencia de avisos</p>
                         <div className="grid gap-3 sm:grid-cols-3">
                             {[
                                 { key: "ahora" as const, title: "En el momento", desc: "Notificacion al instante", icon: Zap },
@@ -170,8 +175,8 @@ export default function AlertsCenterPage() {
                                         key={item.key}
                                         type="button"
                                         onClick={() => setSelectedFreq(item.key)}
-                                        className={`rounded-2xl border p-5 text-left transition ${
-                                            active ? "border-[#031a44] bg-[#031a44] text-white" : "border-slate-200 bg-white text-slate-800"
+                                        className={`min-h-[144px] rounded-[22px] border p-5 text-left transition ${
+                                            active ? "border-[#031a44] bg-[#031a44] text-white shadow-[0_12px_28px_rgba(3,26,68,0.24)]" : "border-[#ebe6dc] bg-white text-slate-800"
                                         }`}
                                     >
                                         <Icon className={`h-5 w-5 ${active ? "text-white" : "text-slate-500"}`} />
@@ -186,7 +191,7 @@ export default function AlertsCenterPage() {
                     <section className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Configuracion de umbrales</p>
+                                <p className={SECTION_EYEBROW}>Configuracion de umbrales</p>
                                 <p className="mt-1 text-sm text-slate-600">Defini los limites para disparar alertas.</p>
                             </div>
                             <button type="button" className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-[0.08em] text-[#07245c]">
@@ -194,7 +199,7 @@ export default function AlertsCenterPage() {
                                 Editar valores
                             </button>
                         </div>
-                        <div className="rounded-2xl border border-slate-200 bg-white">
+                        <div className={`${SURFACE_CARD}`}>
                             <div className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] border-b border-slate-100 px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">
                                 <span>Regla</span>
                                 <span>Valor</span>
@@ -215,7 +220,7 @@ export default function AlertsCenterPage() {
                     </section>
 
                     <section className="space-y-4">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Canales de envio</p>
+                        <p className={SECTION_EYEBROW}>Canales de envio</p>
                         <div className="space-y-3">
                             {[
                                 { title: "WhatsApp", value: "+54 9 11 5555-0192", action: "Cambiar", icon: Smartphone, hint: "El mas rapido" },
@@ -224,7 +229,7 @@ export default function AlertsCenterPage() {
                             ].map((channel) => {
                                 const Icon = channel.icon;
                                 return (
-                                    <div key={channel.title} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                                    <div key={channel.title} className="flex min-h-[88px] items-center justify-between rounded-[22px] border border-[#ebe6dc] bg-white px-4 py-4 shadow-[0_10px_20px_rgba(15,23,42,0.04)]">
                                         <div className="flex items-center gap-3">
                                             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
                                                 <Icon className="h-5 w-5" />
@@ -242,8 +247,8 @@ export default function AlertsCenterPage() {
                     </section>
 
                     <section className="space-y-4">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Disponibilidad de atencion</p>
-                        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                        <p className={SECTION_EYEBROW}>Disponibilidad de atencion</p>
+                        <div className={`${SURFACE_CARD} p-5`}>
                             <div className="grid gap-6 md:grid-cols-[1fr_240px]">
                                 <div className="space-y-3">
                                     {[
@@ -275,24 +280,24 @@ export default function AlertsCenterPage() {
                 </div>
 
                 <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
-                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+                    <section className={`${SURFACE_CARD} p-5`}>
                         <h2 className="text-3xl font-black leading-8 text-[#07163d]">Atencion inmediata</h2>
                         <p className="mt-2 text-sm leading-6 text-slate-600">Resumen del estado operativo y disparadores recientes.</p>
 
                         <div className="mt-4 grid grid-cols-2 gap-2">
-                            <div className="rounded-xl bg-slate-50 p-3">
+                            <div className="rounded-[16px] bg-slate-50 p-3">
                                 <p className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Total</p>
                                 <p className="mt-2 text-4xl font-black text-slate-900">24</p>
                             </div>
-                            <div className="rounded-xl border border-red-200 bg-red-50 p-3">
+                            <div className="rounded-[16px] border border-red-200 bg-red-50 p-3">
                                 <p className="text-[11px] font-black uppercase tracking-[0.08em] text-red-500">Criticas</p>
                                 <p className="mt-2 text-4xl font-black text-red-600">3</p>
                             </div>
-                            <div className="rounded-xl bg-slate-50 p-3">
+                            <div className="rounded-[16px] bg-slate-50 p-3">
                                 <p className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Moderadas</p>
                                 <p className="mt-2 text-4xl font-black text-amber-500">12</p>
                             </div>
-                            <div className="rounded-xl bg-slate-50 p-3">
+                            <div className="rounded-[16px] bg-slate-50 p-3">
                                 <p className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Pendientes</p>
                                 <p className="mt-2 text-4xl font-black text-slate-700">5</p>
                             </div>
@@ -304,7 +309,7 @@ export default function AlertsCenterPage() {
                                 { title: "Sin ventas en 7 dias", time: "Hoy, 08:30 AM" },
                                 { title: "Cancelaciones: 40%", time: "Ayer, 21:15 PM" },
                             ].map((item) => (
-                                <div key={item.title} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-3">
+                                <div key={item.title} className="flex min-h-[68px] items-center justify-between rounded-[16px] border border-[#ebe6dc] px-3 py-3">
                                     <div>
                                         <p className="text-sm font-black text-slate-800">{item.title}</p>
                                         <p className="text-xs text-slate-500">{item.time}</p>
@@ -315,18 +320,18 @@ export default function AlertsCenterPage() {
                         </div>
                     </section>
 
-                    <section className="rounded-2xl bg-[#031a44] p-5 text-white shadow-[0_14px_26px_rgba(3,26,68,0.35)]">
+                    <section className="rounded-[28px] border border-[#17233f] bg-[#031a44] p-5 text-white shadow-[0_14px_26px_rgba(3,26,68,0.35)]">
                         <h3 className="text-3xl font-black">Guardar cambios</h3>
                         <p className="mt-2 text-sm leading-6 text-slate-200">Esta configuracion impacta en como te protegemos desde ahora.</p>
-                        <button type="button" className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-black text-[#031a44]">
+                        <button type="button" className="mt-5 inline-flex w-full items-center justify-center rounded-[16px] bg-white px-4 py-3 text-sm font-black text-[#031a44]">
                             Aplicar ahora
                         </button>
-                        <button type="button" className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold text-slate-200">
+                        <button type="button" className="mt-3 inline-flex w-full items-center justify-center rounded-[16px] border border-white/20 px-4 py-3 text-sm font-semibold text-slate-200">
                             Restablecer sugerido
                         </button>
                     </section>
 
-                    <section className="rounded-2xl border border-red-200 bg-red-50 p-5">
+                    <section className="rounded-[28px] border border-red-200 bg-red-50 p-5">
                         <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-red-700">
                             <ShieldAlert className="h-4 w-4" />
                             Protocolo de crisis
@@ -334,7 +339,7 @@ export default function AlertsCenterPage() {
                         <p className="mt-3 text-sm leading-6 text-red-800">
                             Detectamos 2 eventos criticos pendientes que pueden comprometer tu reputacion.
                         </p>
-                        <button type="button" className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-red-600 px-4 py-3 text-sm font-black text-white">
+                        <button type="button" className="mt-4 inline-flex w-full items-center justify-center rounded-[16px] bg-red-600 px-4 py-3 text-sm font-black text-white">
                             Resolver incidentes
                         </button>
                     </section>
