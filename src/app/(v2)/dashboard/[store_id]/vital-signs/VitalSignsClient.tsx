@@ -271,7 +271,7 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
             </section>
 
             {/* ── Tabs de áreas ────────────────────────────────────────── */}
-            <div className="mb-6 flex gap-1.5 rounded-[20px] border border-[#e5dfd3] bg-white p-1.5 shadow-[0_12px_24px_rgba(15,23,42,0.05)]">
+            <div className="mb-6 grid grid-cols-2 gap-1.5 rounded-[20px] border border-[#e5dfd3] bg-white p-1.5 shadow-[0_12px_24px_rgba(15,23,42,0.05)] sm:flex">
                 {AREAS.map((area) => {
                     const active = area.key === selectedAreaKey;
                     const Icon = area.icon;
@@ -283,7 +283,7 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                             key={area.key}
                             type="button"
                             onClick={() => setSelectedAreaKey(area.key)}
-                            className={`relative flex min-h-[66px] flex-1 items-center justify-center gap-2.5 rounded-[16px] px-3 py-3 text-sm font-bold transition-all ${
+                            className={`relative flex min-h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] px-2 py-3 text-sm font-bold transition-all sm:min-h-[66px] sm:gap-2.5 sm:px-3 ${
                                 active
                                     ? "bg-[#0f4fe7] text-white shadow-[0_12px_22px_rgba(29,78,216,0.24)]"
                                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
@@ -293,17 +293,17 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                                 <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-red-500" />
                             )}
                             <Icon className={`h-4 w-4 shrink-0 ${active ? "text-white" : "text-slate-400"}`} />
-                            <span>{area.label}</span>
+                            <span className="truncate text-xs sm:text-sm">{area.label}</span>
                         </button>
                     );
                 })}
             </div>
 
             {/* ── Cuerpo principal: panel izquierdo + columna derecha ──── */}
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
 
-                {/* Panel de métricas del área */}
-                <div className="space-y-6">
+                {/* Panel de métricas del área — aparece 2do en mobile */}
+                <div className="order-2 space-y-6 lg:order-1">
 
                     {/* Card principal del panel */}
                     <section className={`overflow-hidden ${SURFACE_CARD}`}>
@@ -423,8 +423,8 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                     </section>
                 </div>
 
-                {/* Columna derecha */}
-                <div className="space-y-6">
+                {/* Columna derecha — aparece 1ra en mobile */}
+                <div className="order-1 space-y-6 lg:order-2">
 
                     {/* Score del negocio */}
                     {score !== null && (

@@ -61,12 +61,13 @@ export default function AlertsCenterPage() {
     return (
         <div className="mx-auto w-full max-w-6xl">
             <section className="mb-8">
-                <h1 className="text-5xl font-black tracking-tight text-[#07163d]">Notificaciones y alertas</h1>
-                <p className="mt-3 max-w-4xl text-2xl leading-9 text-slate-700">
+                <h1 className="text-3xl font-black tracking-tight text-[#07163d] sm:text-5xl">Notificaciones y alertas</h1>
+                <p className="mt-3 max-w-4xl text-base leading-7 text-slate-700 sm:text-2xl sm:leading-9">
                     SmartSeller te avisa antes de que los problemas afecten tus ventas. Elegi que cosas queres que te avisemos, por donde y con que urgencia.
                 </p>
             </section>
 
+            {/* Mobile: aside first, then content */}
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="space-y-8">
                     <section className="space-y-4">
@@ -200,19 +201,42 @@ export default function AlertsCenterPage() {
                             </button>
                         </div>
                         <div className={`${SURFACE_CARD}`}>
-                            <div className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] border-b border-slate-100 px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">
-                                <span>Regla</span>
-                                <span>Valor</span>
-                                <span>Unidad</span>
-                                <span>Nivel</span>
+                            {/* Desktop/tablet: grid table */}
+                            <div className="hidden sm:block">
+                                <div className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] border-b border-slate-100 px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">
+                                    <span>Regla</span>
+                                    <span>Valor</span>
+                                    <span>Unidad</span>
+                                    <span>Nivel</span>
+                                </div>
+                                <div className="divide-y divide-slate-100">
+                                    {triggerRows.map((row) => (
+                                        <div key={row.rule} className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] items-center px-5 py-4">
+                                            <p className="text-sm font-semibold text-slate-800">{row.rule}</p>
+                                            <div className="w-14 rounded-md bg-slate-100 px-3 py-2 text-center text-sm font-black text-slate-900">{row.value}</div>
+                                            <p className="text-sm text-slate-600">{row.unit}</p>
+                                            <span className={`mx-auto h-2.5 w-2.5 rounded-full ${row.level === "alto" ? "bg-red-500" : "bg-amber-500"}`} />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="divide-y divide-slate-100">
+                            {/* Mobile: stacked cards */}
+                            <div className="divide-y divide-slate-100 sm:hidden">
                                 {triggerRows.map((row) => (
-                                    <div key={row.rule} className="grid grid-cols-[1.8fr_0.7fr_0.9fr_0.5fr] items-center px-5 py-4">
-                                        <p className="text-sm font-semibold text-slate-800">{row.rule}</p>
-                                        <div className="w-14 rounded-md bg-slate-100 px-3 py-2 text-center text-sm font-black text-slate-900">{row.value}</div>
-                                        <p className="text-sm text-slate-600">{row.unit}</p>
-                                        <span className={`mx-auto h-2.5 w-2.5 rounded-full ${row.level === "alto" ? "bg-red-500" : "bg-amber-500"}`} />
+                                    <div key={row.rule} className="flex flex-col gap-3 px-5 py-4">
+                                        <p className="text-sm font-semibold leading-5 text-slate-800">{row.rule}</p>
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="rounded-md bg-slate-100 px-3 py-1.5 text-sm font-black text-slate-900">{row.value}</div>
+                                                <span className="text-sm text-slate-500">{row.unit}</span>
+                                            </div>
+                                            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${
+                                                row.level === "alto" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                                            }`}>
+                                                <span className={`h-1.5 w-1.5 rounded-full ${row.level === "alto" ? "bg-red-500" : "bg-amber-500"}`} />
+                                                {row.level === "alto" ? "Alto" : "Medio"}
+                                            </span>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -279,7 +303,7 @@ export default function AlertsCenterPage() {
                     </section>
                 </div>
 
-                <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
+                <aside className="order-first space-y-4 lg:order-none lg:sticky lg:top-6 lg:h-fit">
                     <section className={`${SURFACE_CARD} p-5`}>
                         <h2 className="text-3xl font-black leading-8 text-[#07163d]">Atencion inmediata</h2>
                         <p className="mt-2 text-sm leading-6 text-slate-600">Resumen del estado operativo y disparadores recientes.</p>

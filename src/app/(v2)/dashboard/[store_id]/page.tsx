@@ -307,23 +307,23 @@ export default async function DashboardPrincipalPage({
 
     return (
         <div className="space-y-8 pb-10">
-            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_320px]">
-                <article className={`${SURFACE_CARD} px-8 py-8 lg:px-9`}>
+            <section className="grid gap-6 lg:grid-cols-[minmax(0,1.85fr)_320px]">
+                <article className={`${SURFACE_CARD} px-5 py-6 sm:px-8 sm:py-8 lg:px-9`}>
                     <p className={SECTION_EYEBROW}>Cómo está tu negocio hoy</p>
                     <div className="mt-7 grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:items-center">
-                        <div className="flex items-center gap-7">
-                            <div className="flex items-end leading-none">
-                                <span className="text-[6.4rem] font-black tracking-[-0.08em] text-[#0f1117]">{scoreData ? scoreData.score : "--"}</span>
-                                <span className="pb-2 text-[3.6rem] font-black tracking-[-0.06em] text-[#c5c8cf]">/100</span>
+                        <div className="flex min-w-0 items-center gap-5 sm:gap-7">
+                            <div className="flex min-w-0 items-end leading-none">
+                                <span className="text-[4.8rem] font-black tracking-[-0.08em] text-[#0f1117] sm:text-[6.4rem]">{scoreData ? scoreData.score : "--"}</span>
+                                <span className="pb-2 text-[2.6rem] font-black tracking-[-0.06em] text-[#c5c8cf] sm:text-[3.6rem]">/100</span>
                             </div>
                             <div className="hidden h-20 w-px bg-[#ece8de] lg:block" />
                         </div>
-                        <div className="max-w-[27rem]">
-                            <div className="flex items-center gap-2 text-[2.2rem] font-black leading-none text-[#e12f2f]">
-                                <ArrowDown className="h-6 w-6" />
+                        <div className="min-w-0 max-w-[27rem]">
+                            <div className="flex items-center gap-2 text-[1.6rem] font-black leading-none text-[#e12f2f] sm:text-[2.2rem]">
+                                <ArrowDown className="h-5 w-5 sm:h-6 sm:w-6" />
                                 <span>Perdés fuerza</span>
                             </div>
-                            <p className="mt-3 text-[1.82rem] font-semibold leading-[1.24] text-[#2d313a]">
+                            <p className="mt-3 text-[1.2rem] font-semibold leading-[1.36] text-[#2d313a] sm:text-[1.82rem] sm:leading-[1.24]">
                                 Hoy tenés problemas operativos que ya están frenando tus ventas.
                             </p>
                         </div>
@@ -366,7 +366,7 @@ export default async function DashboardPrincipalPage({
                 </aside>
             </section>
 
-            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_320px]">
+            <section className="grid gap-6 lg:grid-cols-[minmax(0,1.85fr)_320px]">
                 <article className={`${SURFACE_CARD} px-8 py-8`}>
                     <div className="flex items-center justify-between gap-4">
                         <div>
@@ -512,7 +512,8 @@ export default async function DashboardPrincipalPage({
                 <div className="mt-8">
                     {sparklineScores.length >= 2 ? (
                         <div className="rounded-[22px] border border-[#ebe6dc] bg-[linear-gradient(180deg,#ffffff_0%,#f5f7fb_100%)] px-5 py-6">
-                            <svg viewBox="0 0 960 260" className="h-[260px] w-full">
+                            {/* SVG responsive: height scales with container */}
+                            <svg viewBox="0 0 960 260" className="h-[160px] w-full sm:h-[220px] lg:h-[260px]">
                                 <line x1="0" y1="220" x2="960" y2="220" stroke="#dbe3f2" strokeWidth="2" />
                                 <path d={sparklinePath(sparklineScores)} fill="none" stroke="#1d4ed8" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
                                 <circle
