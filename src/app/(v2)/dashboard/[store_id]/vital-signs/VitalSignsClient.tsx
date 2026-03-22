@@ -65,7 +65,7 @@ function signalDescription(signal: AreaSignal): string {
     }
     if (signal.signal_key === "cancellation_spike") {
         const ratio = ev["ratio"];
-        return ratio !== undefined ? `Ratio de cancelación: ${Number(ratio * 100).toFixed(1)}% del total de órdenes.` : "Índice elevado de cancelaciones.";
+        return ratio !== undefined ? `Ratio de cancelación: ${(Number(ratio) * 100).toFixed(1)}% del total de órdenes.` : "Índice elevado de cancelaciones.";
     }
     if (signal.signal_key === "unanswered_messages_spike") {
         const received = ev["messages_received_1d"];
