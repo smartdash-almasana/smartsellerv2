@@ -61,8 +61,8 @@ export default function AlertsCenterPage() {
     return (
         <div className="mx-auto w-full max-w-6xl">
             <section className="mb-8">
-                <h1 className="text-3xl font-black tracking-[-0.03em] text-[#07163d] sm:text-5xl">Notificaciones y alertas</h1>
-                <p className="mt-3 max-w-4xl text-base leading-7 text-slate-700 sm:text-[1.95rem] sm:leading-[1.32]">
+                <h1 className="text-2xl font-black tracking-[-0.03em] text-[#07163d] sm:text-[2.7rem]">Notificaciones y alertas</h1>
+                <p className="mt-3 max-w-4xl text-[0.92rem] leading-7 text-slate-700 sm:text-[1rem] sm:leading-[1.45]">
                     SmartSeller te avisa antes de que los problemas afecten tus ventas. Elegi que cosas queres que te avisemos, por donde y con que urgencia.
                 </p>
             </section>
@@ -113,15 +113,15 @@ export default function AlertsCenterPage() {
                                         key={item.key}
                                         type="button"
                                         onClick={() => setChannelsActive((curr) => ({ ...curr, [item.key]: !curr[item.key] }))}
-                                        className={`min-h-[176px] rounded-[18px] border p-5 text-left transition ${
+                                        className={`min-h-[160px] rounded-[18px] border p-5 text-left transition ${
                                             enabled ? "border-[#e6e1d8] bg-white shadow-[0_10px_20px_rgba(15,23,42,0.06)]" : "border-[#e6e1d8] bg-[#f7f7f8]"
                                         }`}
                                     >
                                         <span className="inline-flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#eef1f6] text-slate-600">
                                             <Icon className="h-5 w-5" />
                                         </span>
-                                        <p className="mt-4 text-[1.3rem] font-black tracking-[-0.02em] text-slate-900">{item.title}</p>
-                                        <p className="mt-1 text-[0.92rem] font-medium text-slate-600">{item.subtitle}</p>
+                                        <p className="mt-4 text-[1.05rem] font-black tracking-[-0.02em] text-slate-900">{item.title}</p>
+                                        <p className="mt-1 text-[0.82rem] font-medium text-slate-600">{item.subtitle}</p>
                                         <span className={`mt-4 inline-flex ${CHIP_BASE} ${item.activeTone}`}>
                                             {enabled ? "ACTIVO" : item.activeLabel}
                                         </span>
@@ -175,13 +175,13 @@ export default function AlertsCenterPage() {
                                         key={item.key}
                                         type="button"
                                         onClick={() => setSelectedFreq(item.key)}
-                                        className={`min-h-[144px] rounded-[18px] border p-5 text-left transition ${
+                                        className={`min-h-[136px] rounded-[18px] border p-5 text-left transition ${
                                             active ? "border-[#031a44] bg-[#031a44] text-white shadow-[0_12px_28px_rgba(3,26,68,0.24)]" : "border-[#ebe6dc] bg-white text-slate-800"
                                         }`}
                                     >
                                         <Icon className={`h-5 w-5 ${active ? "text-white" : "text-slate-500"}`} />
-                                        <p className="mt-6 text-[1.08rem] font-black">{item.title}</p>
-                                        <p className={`mt-1 text-[0.83rem] ${active ? "text-slate-200" : "text-slate-600"}`}>{item.desc}</p>
+                                        <p className="mt-5 text-[0.96rem] font-black">{item.title}</p>
+                                        <p className={`mt-1 text-[0.78rem] ${active ? "text-slate-200" : "text-slate-600"}`}>{item.desc}</p>
                                     </button>
                                 );
                             })}
@@ -304,25 +304,25 @@ export default function AlertsCenterPage() {
 
                 <aside className="order-first space-y-4 lg:order-none lg:sticky lg:top-6 lg:h-fit">
                     <section className={`${SURFACE_CARD} p-5`}>
-                        <h2 className="text-[2rem] font-black leading-8 tracking-[-0.02em] text-[#07163d]">Atencion inmediata</h2>
-                        <p className="mt-2 text-[0.84rem] leading-6 text-slate-600">Resumen del estado operativo y disparadores recientes.</p>
+                        <h2 className="text-[1.55rem] font-black leading-8 tracking-[-0.02em] text-[#07163d]">Atencion inmediata</h2>
+                        <p className="mt-2 text-[0.78rem] leading-6 text-slate-600">Resumen del estado operativo y disparadores recientes.</p>
 
                         <div className="mt-4 grid grid-cols-2 gap-2">
                             <div className="rounded-[14px] bg-slate-50 p-3">
                                 <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Total</p>
-                                <p className="mt-2 text-[2.25rem] font-black text-slate-900">24</p>
+                                <p className="mt-2 text-[1.85rem] font-black text-slate-900">24</p>
                             </div>
                             <div className="rounded-[14px] border border-red-200 bg-red-50 p-3">
                                 <p className="text-[10px] font-black uppercase tracking-[0.1em] text-red-500">Criticas</p>
-                                <p className="mt-2 text-[2.25rem] font-black text-red-600">3</p>
+                                <p className="mt-2 text-[1.85rem] font-black text-red-600">3</p>
                             </div>
                             <div className="rounded-[14px] bg-slate-50 p-3">
                                 <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Moderadas</p>
-                                <p className="mt-2 text-[2.25rem] font-black text-amber-500">12</p>
+                                <p className="mt-2 text-[1.85rem] font-black text-amber-500">12</p>
                             </div>
                             <div className="rounded-[14px] bg-slate-50 p-3">
                                 <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Pendientes</p>
-                                <p className="mt-2 text-[2.25rem] font-black text-slate-700">5</p>
+                                <p className="mt-2 text-[1.85rem] font-black text-slate-700">5</p>
                             </div>
                         </div>
 
@@ -334,8 +334,8 @@ export default function AlertsCenterPage() {
                             ].map((item) => (
                                 <div key={item.title} className="flex min-h-[68px] items-center justify-between rounded-[14px] border border-[#e8e3da] px-3 py-3">
                                     <div>
-                                        <p className="text-sm font-black text-slate-800">{item.title}</p>
-                                        <p className="text-xs text-slate-500">{item.time}</p>
+                                        <p className="text-[0.84rem] font-black text-slate-800">{item.title}</p>
+                                        <p className="text-[0.72rem] text-slate-500">{item.time}</p>
                                     </div>
                                     <CircleAlert className="h-4 w-4 text-red-600" />
                                 </div>
@@ -344,12 +344,12 @@ export default function AlertsCenterPage() {
                     </section>
 
                     <section className="rounded-[28px] border border-[#17233f] bg-[#031a44] p-5 text-white shadow-[0_14px_26px_rgba(3,26,68,0.35)]">
-                        <h3 className="text-[2rem] font-black tracking-[-0.02em]">Guardar cambios</h3>
-                        <p className="mt-2 text-sm leading-6 text-slate-200">Esta configuracion impacta en como te protegemos desde ahora.</p>
-                        <button type="button" className="mt-5 inline-flex w-full items-center justify-center rounded-[14px] bg-white px-4 py-3 text-sm font-black text-[#031a44]">
+                        <h3 className="text-[1.55rem] font-black tracking-[-0.02em]">Guardar cambios</h3>
+                        <p className="mt-2 text-[0.78rem] leading-6 text-slate-200">Esta configuracion impacta en como te protegemos desde ahora.</p>
+                        <button type="button" className="mt-5 inline-flex w-full items-center justify-center rounded-[14px] bg-white px-4 py-3 text-[0.84rem] font-black text-[#031a44]">
                             Aplicar ahora
                         </button>
-                        <button type="button" className="mt-3 inline-flex w-full items-center justify-center rounded-[14px] border border-white/20 px-4 py-3 text-sm font-semibold text-slate-200">
+                        <button type="button" className="mt-3 inline-flex w-full items-center justify-center rounded-[14px] border border-white/20 px-4 py-3 text-[0.84rem] font-semibold text-slate-200">
                             Restablecer sugerido
                         </button>
                     </section>
@@ -359,10 +359,10 @@ export default function AlertsCenterPage() {
                             <ShieldAlert className="h-4 w-4" />
                             Protocolo de crisis
                         </p>
-                        <p className="mt-3 text-sm leading-6 text-red-800">
+                        <p className="mt-3 text-[0.78rem] leading-6 text-red-800">
                             Detectamos 2 eventos criticos pendientes que pueden comprometer tu reputacion.
                         </p>
-                        <button type="button" className="mt-4 inline-flex w-full items-center justify-center rounded-[14px] bg-red-600 px-4 py-3 text-sm font-black text-white">
+                        <button type="button" className="mt-4 inline-flex w-full items-center justify-center rounded-[14px] bg-red-600 px-4 py-3 text-[0.84rem] font-black text-white">
                             Resolver incidentes
                         </button>
                     </section>

@@ -311,19 +311,19 @@ export default async function DashboardPrincipalPage({
                 <article className={`${SURFACE_CARD} px-5 py-6 sm:px-8 sm:py-8 lg:px-9`}>
                     <p className={SECTION_EYEBROW}>Cómo está tu negocio hoy</p>
                     <div className="mt-7 grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:items-center">
-                        <div className="flex min-w-0 items-center gap-5 sm:gap-7">
+                        <div className="flex min-w-0 items-center gap-4 sm:gap-6">
                             <div className="flex min-w-0 items-end leading-none">
-                                <span className="text-[4.5rem] font-black tracking-[-0.08em] text-[#0f1117] sm:text-[5.7rem]">{scoreData ? scoreData.score : "--"}</span>
-                                <span className="pb-2 text-[2.25rem] font-black tracking-[-0.06em] text-[#c5c8cf] sm:text-[3.2rem]">/100</span>
+                                <span className="text-[3.5rem] font-black tracking-[-0.08em] text-[#0f1117] sm:text-[4.4rem]">{scoreData ? scoreData.score : "--"}</span>
+                                <span className="pb-2 text-[1.7rem] font-black tracking-[-0.06em] text-[#c5c8cf] sm:text-[2.35rem]">/100</span>
                             </div>
-                            <div className="hidden h-20 w-px bg-[#ece8de] lg:block" />
+                            <div className="hidden h-16 w-px bg-[#ece8de] lg:block" />
                         </div>
                         <div className="min-w-0 max-w-[27rem]">
-                            <div className="flex items-center gap-2 text-[1.4rem] font-black leading-none text-[#e12f2f] sm:text-[2rem]">
-                                <ArrowDown className="h-5 w-5 sm:h-6 sm:w-6" />
+                            <div className="flex items-center gap-2 text-[1rem] font-black leading-none text-[#e12f2f] sm:text-[1.28rem]">
+                                <ArrowDown className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
                                 <span>Perdés fuerza</span>
                             </div>
-                            <p className="mt-3 text-[1.1rem] font-semibold leading-[1.42] text-[#2d313a] sm:text-[1.56rem] sm:leading-[1.28]">
+                            <p className="mt-3 text-[0.9rem] font-semibold leading-[1.42] text-[#2d313a] sm:text-[1.04rem] sm:leading-[1.28]">
                                 Hoy tenés problemas operativos que ya están frenando tus ventas.
                             </p>
                         </div>
@@ -342,7 +342,7 @@ export default async function DashboardPrincipalPage({
                                 </p>
                             </div>
                             <div className="text-right">
-                                <p className="text-[2.7rem] font-black leading-none tracking-[-0.05em] text-[#e12f2f]">
+                                <p className="text-[1.75rem] font-black leading-none tracking-[-0.05em] text-[#e12f2f] sm:text-[2rem]">
                                     {delta !== null ? `${Math.abs(delta)} pts` : scoreData ? `${scoreData.score} pts` : "--"}
                                 </p>
                                 <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-[#a6a9b1]">Proyección cierre</p>
@@ -353,11 +353,11 @@ export default async function DashboardPrincipalPage({
 
                 <aside className={`${SURFACE_CARD} px-7 py-8`}>
                     <p className={SECTION_EYEBROW}>Hoy en tu negocio</p>
-                    <div className="mt-8 space-y-6">
+                    <div className="mt-8 space-y-5">
                         {todayMetrics.map((item) => (
-                            <div key={item.label} className="grid min-h-[50px] grid-cols-[1fr_auto] items-center gap-5 border-b border-[#f0ece4] pb-4 last:border-b-0 last:pb-0">
-                                <span className="text-[1rem] font-semibold text-[#444853]">{item.label}</span>
-                                <span className={`text-[1.62rem] font-black tabular-nums ${item.tone === "danger" && (item.value ?? 0) > 0 ? "text-[#e12f2f]" : "text-[#101219]"}`}>
+                            <div key={item.label} className="grid min-h-[46px] grid-cols-[1fr_auto] items-center gap-4 border-b border-[#f0ece4] pb-4 last:border-b-0 last:pb-0">
+                                <span className="text-[0.84rem] font-semibold text-[#444853]">{item.label}</span>
+                                <span className={`text-[1rem] font-black tabular-nums sm:text-[1.05rem] ${item.tone === "danger" && (item.value ?? 0) > 0 ? "text-[#e12f2f]" : "text-[#101219]"}`}>
                                     {formatMetricValue(item.value)}
                                 </span>
                             </div>
@@ -380,7 +380,7 @@ export default async function DashboardPrincipalPage({
                         </Link>
                     </div>
 
-                    <div className="mt-6 space-y-4.5">
+                    <div className="mt-6 space-y-4">
                         {activeSignals.length > 0 ? (
                             activeSignals.slice(0, 3).map((signal) => (
                                 <article key={signal.signal_key} className={`relative overflow-hidden ${SURFACE_INSET} bg-[#faf9f6] px-6 py-5`}>
@@ -390,9 +390,9 @@ export default async function DashboardPrincipalPage({
                                             <span className={`${CHIP_BASE} ${signalBadgeClassName(signal)}`}>
                                                 {signalBadge(signal)}
                                             </span>
-                                            <h3 className="text-[1.62rem] font-black leading-tight text-[#161616]">{signalHeadline(signal.signal_key)}</h3>
+                                            <h3 className="text-[0.98rem] font-black leading-tight text-[#161616]">{signalHeadline(signal.signal_key)}</h3>
                                         </div>
-                                        <div className="grid gap-5 text-[0.98rem] leading-7 text-[#33353a] md:grid-cols-2">
+                                        <div className="grid gap-5 text-[0.78rem] leading-6 text-[#33353a] md:grid-cols-2">
                                             <div>
                                                 <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-[#969aa3]">Qué pasó</p>
                                                 <p className="mt-1">{evidenceSummary(signal)}</p>
@@ -402,7 +402,7 @@ export default async function DashboardPrincipalPage({
                                                 <p className="mt-1">{signalEffect(signal.signal_key)}</p>
                                             </div>
                                         </div>
-                                        <Link href={`/dashboard/${store_id}/alerts`} className="inline-flex items-center gap-2 text-[0.98rem] font-black text-[#1d4ed8]">
+                                        <Link href={`/dashboard/${store_id}/alerts`} className="inline-flex items-center gap-2 text-[0.78rem] font-black text-[#1d4ed8]">
                                             {signalAction(signal.signal_key)}
                                             <ArrowRight className="h-4 w-4" />
                                         </Link>
@@ -417,14 +417,14 @@ export default async function DashboardPrincipalPage({
                     </div>
                 </article>
 
-                <aside className="rounded-[28px] border border-[#17233f] bg-[linear-gradient(178deg,#0a1738_0%,#09122a_100%)] px-8 py-8 text-white shadow-[0_16px_34px_rgba(3,11,27,0.42)]">
-                    <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#8f98b2]">Recomendación IA</p>
-                    <div className="mt-8 space-y-7">
+                <aside className="rounded-[28px] border border-[#17233f] bg-[linear-gradient(178deg,#0a1738_0%,#09122a_100%)] px-7 py-7 text-white shadow-[0_16px_34px_rgba(3,11,27,0.42)]">
+                    <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-[#8f98b2]">Recomendación IA</p>
+                    <div className="mt-7 space-y-6">
                         <div>
-                            <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-[#1d6dff]">
+                            <p className="text-[0.66rem] font-extrabold uppercase tracking-[0.18em] text-[#1d6dff]">
                                 Resolvé en 10 minutos
                             </p>
-                            <h3 className="mt-3 text-[2.8rem] font-black leading-[1.05] tracking-[-0.04em] text-white">
+                            <h3 className="mt-3 text-[1.9rem] font-black leading-[1.06] tracking-[-0.04em] text-white sm:text-[2.2rem]">
                                 Verificá tu
                                 <br />
                                 stock antes del
@@ -432,7 +432,7 @@ export default async function DashboardPrincipalPage({
                                 lunes
                             </h3>
                         </div>
-                        <p className="text-[1.02rem] leading-8 text-[#c0c8da]">
+                        <p className="text-[0.84rem] leading-7 text-[#c0c8da] sm:text-[0.92rem]">
                             {primarySignal
                                 ? "Tus últimas cancelaciones fueron por falta de stock disponible. Es la acción más urgente para estabilizar tu cuenta y proteger tu salud comercial."
                                 : scoreData
@@ -443,7 +443,7 @@ export default async function DashboardPrincipalPage({
                     <div className="mt-12">
                         <Link
                             href={`/dashboard/${store_id}/alerts`}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-[16px] bg-[#1f5ded] px-5 py-4 text-[1rem] font-black text-white shadow-[0_12px_24px_rgba(31,93,237,0.38)] transition hover:bg-[#1b50cc]"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-[16px] bg-[#1f5ded] px-5 py-3.5 text-[0.84rem] font-black text-white shadow-[0_12px_24px_rgba(31,93,237,0.38)] transition hover:bg-[#1b50cc]"
                         >
                             Revisar stock ahora
                             <ArrowRight className="h-4 w-4" />
@@ -460,14 +460,14 @@ export default async function DashboardPrincipalPage({
                     >
                         <div className="space-y-5">
                             <div className="flex items-start justify-between gap-4">
-                                <h3 className="text-[1.42rem] font-black tracking-[-0.03em] text-[#151515]">{card.name}</h3>
+                                <h3 className="text-[0.94rem] font-black tracking-[-0.03em] text-[#151515]">{card.name}</h3>
                                 <span className={`${CHIP_BASE} ${card.badgeClassName}`}>
                                     {card.badge}
                                 </span>
                             </div>
                             <div className="space-y-3">
                                 {card.rows.map((row) => (
-                                    <div key={`${card.name}-${row.label}`} className="grid grid-cols-[1fr_auto] items-center gap-4 text-[0.9rem]">
+                                    <div key={`${card.name}-${row.label}`} className="grid grid-cols-[1fr_auto] items-center gap-4 text-[0.72rem]">
                                         <span className="font-bold uppercase tracking-[0.05em] text-[#7a7f88]">{row.label}</span>
                                         <span
                                             className={`font-black tabular-nums ${
@@ -513,7 +513,7 @@ export default async function DashboardPrincipalPage({
                     {sparklineScores.length >= 2 ? (
                         <div className="rounded-[22px] border border-[#e9e4da] bg-[linear-gradient(180deg,#ffffff_0%,#f4f6fb_100%)] px-4 py-5 sm:px-5 sm:py-6">
                             {/* SVG responsive: height scales with container */}
-                            <svg viewBox="0 0 960 260" className="h-[170px] w-full sm:h-[220px] lg:h-[250px]">
+                            <svg viewBox="0 0 960 260" className="h-[132px] w-full sm:h-[180px] lg:h-[220px]">
                                 <line x1="0" y1="220" x2="960" y2="220" stroke="#dbe3f2" strokeWidth="2" />
                                 <path d={sparklinePath(sparklineScores)} fill="none" stroke="#1d4ed8" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
                                 <circle
@@ -532,7 +532,7 @@ export default async function DashboardPrincipalPage({
                 </div>
 
                 <div className="mt-7 rounded-[22px] border border-[#ebe6dc] bg-[#f8f8f8] px-4 py-4">
-                    <div className="flex items-start gap-3 text-[1rem] italic text-[#33353a]">
+                    <div className="flex items-start gap-3 text-[0.84rem] italic text-[#33353a]">
                         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#9ca3af]" />
                         <p>
                         {delta !== null

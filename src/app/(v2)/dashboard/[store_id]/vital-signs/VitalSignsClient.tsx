@@ -250,10 +250,10 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                         <p className={SECTION_EYEBROW}>
                             Estado general
                         </p>
-                        <h1 className="mt-2 text-3xl font-black tracking-[-0.03em] text-[#06102c] sm:text-[2.8rem]">
+                        <h1 className="mt-2 text-2xl font-black tracking-[-0.03em] text-[#06102c] sm:text-[2.35rem]">
                             Áreas del negocio
                         </h1>
-                        <p className="mt-2 max-w-2xl text-[1.04rem] leading-8 text-slate-600">{estadoTexto}</p>
+                        <p className="mt-2 max-w-2xl text-[0.92rem] leading-7 text-slate-600">{estadoTexto}</p>
                     </div>
                     <span
                         className={`inline-flex items-center gap-2 rounded-full border border-[#e8e3da] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.08em] ${
@@ -281,7 +281,7 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                             key={area.key}
                             type="button"
                             onClick={() => setSelectedAreaKey(area.key)}
-                            className={`relative flex min-h-[56px] flex-1 items-center justify-center gap-2 rounded-[12px] px-2 py-2.5 text-sm font-bold transition-all sm:min-h-[58px] sm:gap-2 sm:px-3 ${
+                            className={`relative flex min-h-[50px] flex-1 items-center justify-center gap-2 rounded-[12px] px-2 py-2.5 text-[0.68rem] font-bold transition-all sm:min-h-[54px] sm:gap-2 sm:px-3 sm:text-[0.76rem] ${
                                 active
                                     ? "bg-white text-[#0f4fe7] shadow-[0_6px_14px_rgba(15,23,42,0.08)]"
                                     : "text-slate-600 hover:bg-[#f0f1f3] hover:text-slate-900"
@@ -291,7 +291,7 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                                 <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-red-500" />
                             )}
                             <Icon className={`hidden h-4 w-4 shrink-0 sm:block ${active ? "text-[#0f4fe7]" : "text-slate-400"}`} />
-                            <span className="truncate text-xs sm:text-sm">{area.label}</span>
+                            <span className="truncate text-[0.72rem] sm:text-[0.82rem]">{area.label}</span>
                         </button>
                     );
                 })}
@@ -312,7 +312,7 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                                     Panel de {areaLabel}
                                 </p>
                                 {score !== null && (
-                                    <p className="mt-0.5 text-xs text-slate-400">
+                                    <p className="mt-0.5 text-[0.68rem] text-slate-400">
                                         Score global del negocio: {score}/100
                                     </p>
                                 )}
@@ -338,14 +338,14 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                                         return (
                                             <div
                                                 key={card.title}
-                                                className={`min-h-[168px] rounded-[18px] border p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${
+                                                className={`min-h-[150px] rounded-[18px] border p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${
                                                     card.alert
                                                         ? "border-red-200 bg-[linear-gradient(180deg,#fff7f7_0%,#fff0f0_100%)]"
                                                         : "border-[#ebe6dc] bg-[linear-gradient(180deg,#ffffff_0%,#f8f9fb_100%)]"
                                                 }`}
                                             >
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <p className="text-[0.7rem] font-black uppercase tracking-[0.14em] text-slate-500">
+                                                    <p className="text-[0.65rem] font-black uppercase tracking-[0.14em] text-slate-500">
                                                         {card.title}
                                                     </p>
                                                     <Icon
@@ -355,13 +355,13 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                                                     />
                                                 </div>
                                                 <p
-                                                    className={`mt-6 text-[2.6rem] font-black tracking-[-0.04em] ${
+                                                    className={`mt-5 text-[1.9rem] font-black tracking-[-0.04em] ${
                                                         card.alert ? "text-red-600" : "text-slate-900"
                                                     }`}
                                                 >
                                                     {card.value}
                                                 </p>
-                                                <p className="mt-3 text-[11px] text-slate-400">{card.sub}</p>
+                                                <p className="mt-2.5 text-[10px] text-slate-400">{card.sub}</p>
                                             </div>
                                         );
                                     })}
@@ -402,10 +402,10 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                                             <SeverityBadge severity={signal.severity} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-[1rem] font-black text-slate-900">
+                                            <p className="text-[0.92rem] font-black text-slate-900">
                                                 {signalLabel(signal.signal_key)}
                                             </p>
-                                            <p className="mt-1.5 max-w-[42rem] text-sm leading-6 text-slate-500">
+                                            <p className="mt-1.5 max-w-[42rem] text-[0.86rem] leading-6 text-slate-500">
                                                 {signalDescription(signal)}
                                             </p>
                                         </div>
@@ -435,8 +435,8 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                             </div>
                             <div className="p-5">
                                 <div className="flex items-end gap-2">
-                                    <span className="text-5xl font-black tracking-[-0.05em] text-[#06102c]">{score}</span>
-                                    <span className="mb-1 text-lg font-bold text-slate-400">/100</span>
+                                    <span className="text-[3.15rem] font-black tracking-[-0.05em] text-[#06102c] sm:text-[3.45rem]">{score}</span>
+                                    <span className="mb-1 text-base font-bold text-slate-400">/100</span>
                                 </div>
                                 <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
                                     <div
@@ -468,7 +468,7 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                     {/* A qué prestar atención — señales prioritarias de todo el negocio */}
                     <section className="overflow-hidden rounded-[28px] border border-[#17233f] bg-[linear-gradient(180deg,#07132f_0%,#06102c_100%)] text-white shadow-[0_16px_34px_rgba(3,11,27,0.42)]">
                         <div className="border-b border-white/10 px-5 py-4">
-                            <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-blue-300">
+                            <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-blue-300">
                                 A qué prestar atención
                             </p>
                         </div>
@@ -477,14 +477,14 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
                                 {topSignals.map((signal) => (
                                     <li key={signal.signal_key} className="px-5 py-5">
                                         <div className="flex items-center justify-between gap-2">
-                                            <p className="text-[0.98rem] font-black text-white">
+                                            <p className="text-[0.9rem] font-black text-white">
                                                 {signalLabel(signal.signal_key)}
                                             </p>
                                             {signal.severity === "critical" && (
                                                 <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
                                             )}
                                         </div>
-                                        <p className="mt-2 text-sm leading-6 text-slate-400">
+                                        <p className="mt-2 text-[0.84rem] leading-6 text-slate-400">
                                             {signalDescription(signal)}
                                         </p>
                                     </li>
@@ -499,10 +499,10 @@ export default function VitalSignsClient({ scoreData, metricsRow }: VitalSignsCl
 
                     {/* Fuente de datos */}
                     <div className="rounded-[18px] border border-[#ebe6dc] bg-[linear-gradient(180deg,#fafaf8_0%,#f4f5f7_100%)] px-4 py-4">
-                        <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-slate-400">
+                        <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-slate-400">
                             Fuente de datos
                         </p>
-                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                        <p className="mt-1 text-[0.72rem] leading-5 text-slate-500">
                             Métricas del período más reciente registradas por el motor clínico.{" "}
                             {metricsRow?.metric_date
                                 ? `Última lectura: ${metricsRow.metric_date}.`
